@@ -1,0 +1,14 @@
+{
+  "name": "ezpu-emu",
+  "version": "0.1.0",
+  "description": "EZPU 4-bit fantasy computer emulator",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node src/main.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.1",
+    "typescript": "^5.5.4"
+  }
+}
