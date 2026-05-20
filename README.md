@@ -33,8 +33,6 @@ A developer should be able to fully understand:
 * the assembler
 * the compiler
 
-within a single weekend.
-
 ---
 
 # Core Philosophy
@@ -182,7 +180,7 @@ Every instruction is exactly 4 nibbles:
 ```
 
 This ensures:
-
+ign
 * trivial fetch logic
 * easy decoding
 * predictable assembly
@@ -1024,53 +1022,6 @@ Machine Code
 
 ---
 
-# Recommended Repository Structure
-
-```text
-EZPU/
- ├── docs/
- │    ├── ISA.md
- │    ├── memory.md
- │    ├── assembly.md
- │    └── compiler.md
- │
- ├── src/
- │    ├── cpu/
- │    │    ├── CPU.ts
- │    │    ├── Instruction.ts
- │    │    └── Registers.ts
- │    │
- │    ├── memory/
- │    │    └── Memory.ts
- │    │
- │    ├── display/
- │    │    └── Display.ts
- │    │
- │    ├── assembler/
- │    │    ├── Tokenizer.ts
- │    │    ├── Parser.ts
- │    │    └── Assembler.ts
- │    │
- │    ├── compiler/
- │    │    └── EZCCompiler.ts
- │    │
- │    ├── utils/
- │    │    └── Nibble.ts
- │    │
- │    ├── roms/
- │    │    ├── blink.ez
- │    │    └── fill_screen.ez
- │    │
- │    ├── EZPU.ts
- │    └── main.ts
- │
- ├── package.json
- ├── tsconfig.json
- └── README.md
-```
-
----
-
 # Fundamental Classes
 
 ## Memory
@@ -1229,22 +1180,6 @@ Every instruction handler should contain:
 * semantics
 * binary layout
 
-Example:
-
-```ts
-/**
- * Opcode: 0111
- *
- * SET
- *
- * Layout:
- * [0111][REG][VALUE][0000]
- *
- * Example:
- * SET D1, 5
- */
-```
-
 ---
 
 ### 3. Normalize All Values
@@ -1274,130 +1209,6 @@ memory.readAbsolute(address)
 ```
 
 This reinforces the fantasy architecture.
-
----
-
-# Initial Milestone Plan
-
-## Milestone 1 — Core Emulator
-
-Implement:
-
-* Memory
-* CPU
-* Display
-* SET
-* STORE
-* ADDI
-* JMP
-* HALT
-
-Goal:
-
-Render pixels and execute loops.
-
----
-
-## Milestone 2 — Full ISA
-
-Implement:
-
-* LOAD
-* MOV
-* ADD
-* SUB
-* BEQ
-* BGT
-* BLT
-* NOP
-
-Goal:
-
-Fully operational fantasy CPU.
-
----
-
-## Milestone 3 — Assembler
-
-Implement:
-
-* tokenizer
-* parser
-* labels
-* machine code generation
-
-Goal:
-
-Human-readable programs.
-
----
-
-## Milestone 4 — Debugger
-
-Implement:
-
-* register dump
-* memory dump
-* step execution
-* breakpoints
-
-Goal:
-
-Educational introspection.
-
----
-
-## Milestone 5 — EZC Compiler
-
-Implement:
-
-* variables
-* loops
-* conditions
-* pixel syntax
-
-Goal:
-
-Tiny high-level language.
-
----
-
-# Suggested Example Programs
-
-## Initial ROMs
-
-* fill screen
-* blinking pixel
-* moving pixel
-* bouncing pixel
-* counter
-* checkerboard
-* Conway-like automata
-
----
-
-# Recommended VS Code Setup
-
-## Extensions
-
-* GitHub Copilot
-* ESLint
-* Prettier
-* Error Lens
-
----
-
-# TypeScript Configuration
-
-Enable strict mode:
-
-```json
-{
-  "compilerOptions": {
-    "strict": true
-  }
-}
-```
 
 ---
 
