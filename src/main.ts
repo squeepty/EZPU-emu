@@ -1,6 +1,7 @@
 import { Assembler } from "./assembler/Assembler";
 import { EZPU } from "./EZPU";
 import { EZCCompiler } from "./compiler/EZCCompiler";
+import { renderApp } from "./ui/renderApp";
 
 const source = `
 let x = 3;
@@ -34,3 +35,12 @@ machine.run();
 
 console.log("Display:");
 console.log(machine.renderScreen());
+
+const uiPath = renderApp({
+  source,
+  assembly,
+  machineCode,
+  machine,
+});
+
+console.log(`Debugger UI written to: ${uiPath}`);

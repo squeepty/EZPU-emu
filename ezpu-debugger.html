@@ -1,0 +1,747 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EZPU Debugger</title>
+    <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090d12;
+      --panel: #111820;
+      --panel-soft: #151f29;
+      --panel-raised: #1a2632;
+      --border: #263544;
+      --border-strong: #3d5366;
+      --text: #dbe7f1;
+      --muted: #8192a4;
+      --code: #edf6ff;
+      --accent: #63b3ed;
+      --accent-soft: #102d42;
+      --pc: #f6b84a;
+      --pc-soft: #372711;
+      --video: #39d98a;
+      --video-soft: #113725;
+      --danger: #ff6b6b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: #0d131a;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 3px;
+      padding: 5px;
+      border: 1px solid var(--border-strong);
+      background: #05080c;
+    }
+
+    .brand-mark span {
+      background: var(--video);
+      box-shadow: 0 0 10px rgba(57, 217, 138, 0.42);
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .toolbar-subtitle {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .button {
+      height: 32px;
+      min-width: 72px;
+      border: 1px solid var(--border-strong);
+      background: var(--panel-raised);
+      color: var(--text);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 650;
+      border-radius: 6px;
+      padding: 0 10px;
+    }
+
+    .button.primary {
+      background: var(--accent);
+      color: #061019;
+      border-color: var(--accent);
+    }
+
+    .button:disabled {
+      color: #69798a;
+      background: #111820;
+      border-color: #23303d;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      height: 26px;
+      padding: 0 9px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      background: #0d151d;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .workbench {
+      display: grid;
+      grid-template-columns: minmax(280px, 0.88fr) minmax(560px, 1.58fr) minmax(300px, 0.94fr);
+      grid-template-rows: minmax(0, 1fr) auto;
+      gap: 12px;
+      padding: 12px;
+      min-height: 0;
+    }
+
+    .panel {
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      overflow: hidden;
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+    }
+
+    .code-panel {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    .cpu-panel {
+      grid-column: 3;
+      grid-row: 1;
+    }
+
+    .memory-panel {
+      grid-column: 1 / span 2;
+      grid-row: 2;
+    }
+
+    .display-panel {
+      grid-column: 3;
+      grid-row: 2;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 41px;
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel-soft);
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 750;
+    }
+
+    .section-title {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .panel-body {
+      min-height: 0;
+      overflow: auto;
+      padding: 10px;
+    }
+
+    .code-block {
+      margin: 0;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--code);
+      white-space: pre;
+    }
+
+    .listing {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+    }
+
+    .listing th,
+    .listing td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #1f2c38;
+      text-align: left;
+      white-space: nowrap;
+      vertical-align: top;
+    }
+
+    .listing th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #17222d;
+      color: var(--muted);
+      font-weight: 750;
+    }
+
+    .listing tr.current td {
+      background: var(--pc-soft);
+      border-bottom-color: #6d4f18;
+    }
+
+    .address {
+      color: var(--muted);
+    }
+
+    .word {
+      font-weight: 750;
+      color: #96d7ff;
+    }
+
+    .cpu-state,
+    .state-section,
+    .register-grid,
+    .state-grid,
+    .display-meta {
+      display: grid;
+      gap: 8px;
+    }
+
+    .cpu-state {
+      align-content: start;
+      gap: 14px;
+    }
+
+    .register-row,
+    .pc-row,
+    .stat-row {
+      display: grid;
+      grid-template-columns: 54px 58px 1fr;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      border: 1px solid #22303d;
+      border-radius: 6px;
+      background: #0d151d;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+    }
+
+    .wide-value {
+      grid-template-columns: 54px 1fr;
+    }
+
+    .register-name,
+    .pc-name,
+    .stat-name {
+      color: var(--muted);
+      font-weight: 750;
+    }
+
+    .register-value,
+    .pc-value,
+    .stat-value {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .memory-grid {
+      display: grid;
+      grid-template-columns: 50px repeat(16, minmax(20px, 1fr));
+      gap: 2px;
+      align-items: stretch;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 11px;
+    }
+
+    .memory-panel .panel-body {
+      overflow: hidden;
+    }
+
+    .memory-cell,
+    .memory-label,
+    .memory-head {
+      min-height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid #22303d;
+      border-radius: 4px;
+      background: #0d151d;
+    }
+
+    .memory-head,
+    .memory-label {
+      color: var(--muted);
+      background: #17222d;
+      font-weight: 750;
+    }
+
+    .memory-cell.video {
+      color: #bcfbd7;
+      background: var(--video-soft);
+      border-color: #236643;
+    }
+
+    .memory-cell.instruction {
+      color: #d7ecff;
+      background: #10273a;
+      border-color: #2b5e83;
+    }
+
+    .memory-cell.instruction-start {
+      box-shadow: inset 3px 0 0 #63b3ed;
+    }
+
+    .memory-cell.pc {
+      color: #ffe2a5;
+      background: var(--pc-soft);
+      border-color: var(--pc);
+      box-shadow: inset 0 0 0 1px var(--pc);
+    }
+
+    .display-wrap {
+      display: grid;
+      grid-template-columns: minmax(150px, 190px) 1fr;
+      align-items: start;
+      gap: 16px;
+    }
+
+    .display-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      aspect-ratio: 1 / 1;
+      width: 100%;
+      max-width: 190px;
+      padding: 8px;
+      border: 1px solid var(--border-strong);
+      background: #05080c;
+    }
+
+    .pixel {
+      border: 1px solid #253445;
+      background: #020509;
+      min-width: 0;
+      aspect-ratio: 1 / 1;
+    }
+
+    .pixel.on {
+      background: var(--video);
+      border-color: #86efac;
+      box-shadow: 0 0 14px rgba(57, 217, 138, 0.5), inset 0 0 0 2px rgba(255, 255, 255, 0.18);
+    }
+
+    @media (max-width: 1100px) {
+      .workbench {
+        grid-template-columns: 1fr;
+        grid-template-rows: none;
+      }
+
+      .code-panel,
+      .cpu-panel,
+      .memory-panel,
+      .display-panel {
+        grid-column: auto;
+        grid-row: auto;
+      }
+
+      .toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .toolbar-actions {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+  </head>
+  <body>
+    <div class="app">
+      
+    <header class="toolbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <div>
+          <h1>EZPU Debugger</h1>
+          <p class="toolbar-subtitle">Final-state educational workbench</p>
+        </div>
+      </div>
+      <div class="toolbar-actions">
+        <button class="button primary" disabled>Step</button>
+        <button class="button" disabled>Run</button>
+        <button class="button" disabled>Reset</button>
+        <button class="button" disabled>Compile</button>
+        <span class="pill">State: Halted</span>
+        <span class="pill">15 instructions</span>
+      </div>
+    </header>
+  
+      
+    <main class="workbench">
+      
+    <section class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title">EZC Source</h2>
+        <span class="pill">simplified C</span>
+      </div>
+      <div class="panel-body">
+        <pre class="code-block">let x = 3;
+while (x != 0) {
+  pixel(0,x) = 1;
+  x = x - 1;
+}</pre>
+      </div>
+    </section>
+  
+      
+    <section class="panel code-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Assembly + Machine Code</h2>
+        <span class="pill">source to nibbles</span>
+      </div>
+      <div class="panel-body">
+        <table class="listing">
+          <thead>
+            <tr>
+              <th>Line</th>
+              <th>PC</th>
+              <th>Assembly</th>
+              <th>Word</th>
+              <th>Decoded</th>
+            </tr>
+          </thead>
+          <tbody>
+        <tr>
+          <td class="address">00</td>
+          <td class="address">0:0</td>
+          <td>SET D1, 3</td>
+          <td class="word">7030</td>
+          <td>SET D1, 3</td>
+        </tr>
+      
+        <tr>
+          <td class="address">01</td>
+          <td class="address"></td>
+          <td>WHILE_START_0:</td>
+          <td class="word"></td>
+          <td></td>
+        </tr>
+      
+        <tr>
+          <td class="address">02</td>
+          <td class="address">0:4</td>
+          <td>BEQ D1, 0, WHILE_FALSE_3</td>
+          <td class="word">800C</td>
+          <td>BEQ D1, 0, C</td>
+        </tr>
+      
+        <tr>
+          <td class="address">03</td>
+          <td class="address">0:8</td>
+          <td>JMP WHILE_BODY_1</td>
+          <td class="word">B100</td>
+          <td>JMP 1, 0</td>
+        </tr>
+      
+        <tr>
+          <td class="address">04</td>
+          <td class="address"></td>
+          <td>WHILE_FALSE_3:</td>
+          <td class="word"></td>
+          <td></td>
+        </tr>
+      
+        <tr>
+          <td class="address">05</td>
+          <td class="address">0:C</td>
+          <td>JMP WHILE_END_2</td>
+          <td class="word">B380</td>
+          <td>JMP 3, 8</td>
+        </tr>
+      
+        <tr>
+          <td class="address">06</td>
+          <td class="address"></td>
+          <td>WHILE_BODY_1:</td>
+          <td class="word"></td>
+          <td></td>
+        </tr>
+      
+        <tr>
+          <td class="address">07</td>
+          <td class="address">1:0</td>
+          <td>SET D2, 1</td>
+          <td class="word">7110</td>
+          <td>SET D2, 1</td>
+        </tr>
+      
+        <tr>
+          <td class="address">08</td>
+          <td class="address">1:4</td>
+          <td>MOV D3, D1</td>
+          <td class="word">2200</td>
+          <td>MOV D3, D1</td>
+        </tr>
+      
+        <tr>
+          <td class="address">09</td>
+          <td class="address">1:8</td>
+          <td>MOV D4, D3</td>
+          <td class="word">2320</td>
+          <td>MOV D4, D3</td>
+        </tr>
+      
+        <tr>
+          <td class="address">10</td>
+          <td class="address">1:C</td>
+          <td>ADD D4, D3</td>
+          <td class="word">3320</td>
+          <td>ADD D4, D3</td>
+        </tr>
+      
+        <tr>
+          <td class="address">11</td>
+          <td class="address">2:0</td>
+          <td>ADD D4, D3</td>
+          <td class="word">3320</td>
+          <td>ADD D4, D3</td>
+        </tr>
+      
+        <tr>
+          <td class="address">12</td>
+          <td class="address">2:4</td>
+          <td>ADD D4, D3</td>
+          <td class="word">3320</td>
+          <td>ADD D4, D3</td>
+        </tr>
+      
+        <tr>
+          <td class="address">13</td>
+          <td class="address">2:8</td>
+          <td>ADDI D4, 0</td>
+          <td class="word">4300</td>
+          <td>ADDI D4, 0</td>
+        </tr>
+      
+        <tr>
+          <td class="address">14</td>
+          <td class="address">2:C</td>
+          <td>STOREI D2, [D4]</td>
+          <td class="word">E130</td>
+          <td>STOREI D2, [D4]</td>
+        </tr>
+      
+        <tr>
+          <td class="address">15</td>
+          <td class="address">3:0</td>
+          <td>SUBI D1, 1</td>
+          <td class="word">6010</td>
+          <td>SUBI D1, 1</td>
+        </tr>
+      
+        <tr>
+          <td class="address">16</td>
+          <td class="address">3:4</td>
+          <td>JMP WHILE_START_0</td>
+          <td class="word">B040</td>
+          <td>JMP 0, 4</td>
+        </tr>
+      
+        <tr>
+          <td class="address">17</td>
+          <td class="address"></td>
+          <td>WHILE_END_2:</td>
+          <td class="word"></td>
+          <td></td>
+        </tr>
+      
+        <tr class="current">
+          <td class="address">18</td>
+          <td class="address">3:8</td>
+          <td>HALT</td>
+          <td class="word">C000</td>
+          <td>HALT</td>
+        </tr>
+      </tbody>
+        </table>
+      </div>
+    </section>
+  
+      
+    <section class="panel cpu-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">CPU State</h2>
+        <span class="pill">halted</span>
+      </div>
+      <div class="panel-body cpu-state">
+        <div class="state-section">
+          <h3 class="section-title">Registers</h3>
+          <div class="register-grid">
+      <div class="register-row">
+        <span class="register-name">D1</span>
+        <span class="register-value">0</span>
+        <span>0000</span>
+      </div>
+    
+      <div class="register-row">
+        <span class="register-name">D2</span>
+        <span class="register-value">1</span>
+        <span>0001</span>
+      </div>
+    
+      <div class="register-row">
+        <span class="register-name">D3</span>
+        <span class="register-value">1</span>
+        <span>0001</span>
+      </div>
+    
+      <div class="register-row">
+        <span class="register-name">D4</span>
+        <span class="register-value">4</span>
+        <span>0100</span>
+      </div>
+    </div>
+        </div>
+        <div class="state-section">
+          <h3 class="section-title">Program Counter</h3>
+          <div class="state-grid">
+            <div class="pc-row">
+              <span class="pc-name">PCHIGH</span>
+              <span class="pc-value">3</span>
+              <span>bank</span>
+            </div>
+            <div class="pc-row">
+              <span class="pc-name">PCLOW</span>
+              <span class="pc-value">8</span>
+              <span>address</span>
+            </div>
+            <div class="pc-row">
+              <span class="pc-name">PC</span>
+              <span class="pc-value">38</span>
+              <span>3:8</span>
+            </div>
+          </div>
+        </div>
+        <div class="state-section">
+          <h3 class="section-title">Current Instruction</h3>
+          <div class="state-grid">
+            <div class="stat-row">
+              <span class="stat-name">Word</span>
+              <span class="stat-value">C000</span>
+              <span>nibbles</span>
+            </div>
+            <div class="stat-row wide-value">
+              <span class="stat-name">Decode</span>
+              <span class="stat-value">HALT</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  
+      
+    <section class="panel memory-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Memory Banks</h2>
+        <span class="pill">bank F is video RAM</span>
+      </div>
+      <div class="panel-body">
+        <div class="memory-grid"><div class="memory-head">Bank</div><div class="memory-head">0</div><div class="memory-head">1</div><div class="memory-head">2</div><div class="memory-head">3</div><div class="memory-head">4</div><div class="memory-head">5</div><div class="memory-head">6</div><div class="memory-head">7</div><div class="memory-head">8</div><div class="memory-head">9</div><div class="memory-head">A</div><div class="memory-head">B</div><div class="memory-head">C</div><div class="memory-head">D</div><div class="memory-head">E</div><div class="memory-head">F</div><div class="memory-label">0</div><div class="memory-cell instruction instruction-start" title="[0:0]">7</div><div class="memory-cell instruction" title="[0:1]">0</div><div class="memory-cell instruction" title="[0:2]">3</div><div class="memory-cell instruction" title="[0:3]">0</div><div class="memory-cell instruction instruction-start" title="[0:4]">8</div><div class="memory-cell instruction" title="[0:5]">0</div><div class="memory-cell instruction" title="[0:6]">0</div><div class="memory-cell instruction" title="[0:7]">C</div><div class="memory-cell instruction instruction-start" title="[0:8]">B</div><div class="memory-cell instruction" title="[0:9]">1</div><div class="memory-cell instruction" title="[0:A]">0</div><div class="memory-cell instruction" title="[0:B]">0</div><div class="memory-cell instruction instruction-start" title="[0:C]">B</div><div class="memory-cell instruction" title="[0:D]">3</div><div class="memory-cell instruction" title="[0:E]">8</div><div class="memory-cell instruction" title="[0:F]">0</div><div class="memory-label">1</div><div class="memory-cell instruction instruction-start" title="[1:0]">7</div><div class="memory-cell instruction" title="[1:1]">1</div><div class="memory-cell instruction" title="[1:2]">1</div><div class="memory-cell instruction" title="[1:3]">0</div><div class="memory-cell instruction instruction-start" title="[1:4]">2</div><div class="memory-cell instruction" title="[1:5]">2</div><div class="memory-cell instruction" title="[1:6]">0</div><div class="memory-cell instruction" title="[1:7]">0</div><div class="memory-cell instruction instruction-start" title="[1:8]">2</div><div class="memory-cell instruction" title="[1:9]">3</div><div class="memory-cell instruction" title="[1:A]">2</div><div class="memory-cell instruction" title="[1:B]">0</div><div class="memory-cell instruction instruction-start" title="[1:C]">3</div><div class="memory-cell instruction" title="[1:D]">3</div><div class="memory-cell instruction" title="[1:E]">2</div><div class="memory-cell instruction" title="[1:F]">0</div><div class="memory-label">2</div><div class="memory-cell instruction instruction-start" title="[2:0]">3</div><div class="memory-cell instruction" title="[2:1]">3</div><div class="memory-cell instruction" title="[2:2]">2</div><div class="memory-cell instruction" title="[2:3]">0</div><div class="memory-cell instruction instruction-start" title="[2:4]">3</div><div class="memory-cell instruction" title="[2:5]">3</div><div class="memory-cell instruction" title="[2:6]">2</div><div class="memory-cell instruction" title="[2:7]">0</div><div class="memory-cell instruction instruction-start" title="[2:8]">4</div><div class="memory-cell instruction" title="[2:9]">3</div><div class="memory-cell instruction" title="[2:A]">0</div><div class="memory-cell instruction" title="[2:B]">0</div><div class="memory-cell instruction instruction-start" title="[2:C]">E</div><div class="memory-cell instruction" title="[2:D]">1</div><div class="memory-cell instruction" title="[2:E]">3</div><div class="memory-cell instruction" title="[2:F]">0</div><div class="memory-label">3</div><div class="memory-cell instruction instruction-start" title="[3:0]">6</div><div class="memory-cell instruction" title="[3:1]">0</div><div class="memory-cell instruction" title="[3:2]">1</div><div class="memory-cell instruction" title="[3:3]">0</div><div class="memory-cell instruction instruction-start" title="[3:4]">B</div><div class="memory-cell instruction" title="[3:5]">0</div><div class="memory-cell instruction" title="[3:6]">4</div><div class="memory-cell instruction" title="[3:7]">0</div><div class="memory-cell instruction instruction-start pc" title="[3:8]">C</div><div class="memory-cell instruction" title="[3:9]">0</div><div class="memory-cell instruction" title="[3:A]">0</div><div class="memory-cell instruction" title="[3:B]">0</div><div class="memory-cell" title="[3:C]">0</div><div class="memory-cell" title="[3:D]">0</div><div class="memory-cell" title="[3:E]">0</div><div class="memory-cell" title="[3:F]">0</div><div class="memory-label">4</div><div class="memory-cell" title="[4:0]">0</div><div class="memory-cell" title="[4:1]">0</div><div class="memory-cell" title="[4:2]">0</div><div class="memory-cell" title="[4:3]">0</div><div class="memory-cell" title="[4:4]">0</div><div class="memory-cell" title="[4:5]">0</div><div class="memory-cell" title="[4:6]">0</div><div class="memory-cell" title="[4:7]">0</div><div class="memory-cell" title="[4:8]">0</div><div class="memory-cell" title="[4:9]">0</div><div class="memory-cell" title="[4:A]">0</div><div class="memory-cell" title="[4:B]">0</div><div class="memory-cell" title="[4:C]">0</div><div class="memory-cell" title="[4:D]">0</div><div class="memory-cell" title="[4:E]">0</div><div class="memory-cell" title="[4:F]">0</div><div class="memory-label">5</div><div class="memory-cell" title="[5:0]">0</div><div class="memory-cell" title="[5:1]">0</div><div class="memory-cell" title="[5:2]">0</div><div class="memory-cell" title="[5:3]">0</div><div class="memory-cell" title="[5:4]">0</div><div class="memory-cell" title="[5:5]">0</div><div class="memory-cell" title="[5:6]">0</div><div class="memory-cell" title="[5:7]">0</div><div class="memory-cell" title="[5:8]">0</div><div class="memory-cell" title="[5:9]">0</div><div class="memory-cell" title="[5:A]">0</div><div class="memory-cell" title="[5:B]">0</div><div class="memory-cell" title="[5:C]">0</div><div class="memory-cell" title="[5:D]">0</div><div class="memory-cell" title="[5:E]">0</div><div class="memory-cell" title="[5:F]">0</div><div class="memory-label">6</div><div class="memory-cell" title="[6:0]">0</div><div class="memory-cell" title="[6:1]">0</div><div class="memory-cell" title="[6:2]">0</div><div class="memory-cell" title="[6:3]">0</div><div class="memory-cell" title="[6:4]">0</div><div class="memory-cell" title="[6:5]">0</div><div class="memory-cell" title="[6:6]">0</div><div class="memory-cell" title="[6:7]">0</div><div class="memory-cell" title="[6:8]">0</div><div class="memory-cell" title="[6:9]">0</div><div class="memory-cell" title="[6:A]">0</div><div class="memory-cell" title="[6:B]">0</div><div class="memory-cell" title="[6:C]">0</div><div class="memory-cell" title="[6:D]">0</div><div class="memory-cell" title="[6:E]">0</div><div class="memory-cell" title="[6:F]">0</div><div class="memory-label">7</div><div class="memory-cell" title="[7:0]">0</div><div class="memory-cell" title="[7:1]">0</div><div class="memory-cell" title="[7:2]">0</div><div class="memory-cell" title="[7:3]">0</div><div class="memory-cell" title="[7:4]">0</div><div class="memory-cell" title="[7:5]">0</div><div class="memory-cell" title="[7:6]">0</div><div class="memory-cell" title="[7:7]">0</div><div class="memory-cell" title="[7:8]">0</div><div class="memory-cell" title="[7:9]">0</div><div class="memory-cell" title="[7:A]">0</div><div class="memory-cell" title="[7:B]">0</div><div class="memory-cell" title="[7:C]">0</div><div class="memory-cell" title="[7:D]">0</div><div class="memory-cell" title="[7:E]">0</div><div class="memory-cell" title="[7:F]">0</div><div class="memory-label">8</div><div class="memory-cell" title="[8:0]">0</div><div class="memory-cell" title="[8:1]">0</div><div class="memory-cell" title="[8:2]">0</div><div class="memory-cell" title="[8:3]">0</div><div class="memory-cell" title="[8:4]">0</div><div class="memory-cell" title="[8:5]">0</div><div class="memory-cell" title="[8:6]">0</div><div class="memory-cell" title="[8:7]">0</div><div class="memory-cell" title="[8:8]">0</div><div class="memory-cell" title="[8:9]">0</div><div class="memory-cell" title="[8:A]">0</div><div class="memory-cell" title="[8:B]">0</div><div class="memory-cell" title="[8:C]">0</div><div class="memory-cell" title="[8:D]">0</div><div class="memory-cell" title="[8:E]">0</div><div class="memory-cell" title="[8:F]">0</div><div class="memory-label">9</div><div class="memory-cell" title="[9:0]">0</div><div class="memory-cell" title="[9:1]">0</div><div class="memory-cell" title="[9:2]">0</div><div class="memory-cell" title="[9:3]">0</div><div class="memory-cell" title="[9:4]">0</div><div class="memory-cell" title="[9:5]">0</div><div class="memory-cell" title="[9:6]">0</div><div class="memory-cell" title="[9:7]">0</div><div class="memory-cell" title="[9:8]">0</div><div class="memory-cell" title="[9:9]">0</div><div class="memory-cell" title="[9:A]">0</div><div class="memory-cell" title="[9:B]">0</div><div class="memory-cell" title="[9:C]">0</div><div class="memory-cell" title="[9:D]">0</div><div class="memory-cell" title="[9:E]">0</div><div class="memory-cell" title="[9:F]">0</div><div class="memory-label">A</div><div class="memory-cell" title="[A:0]">0</div><div class="memory-cell" title="[A:1]">0</div><div class="memory-cell" title="[A:2]">0</div><div class="memory-cell" title="[A:3]">0</div><div class="memory-cell" title="[A:4]">0</div><div class="memory-cell" title="[A:5]">0</div><div class="memory-cell" title="[A:6]">0</div><div class="memory-cell" title="[A:7]">0</div><div class="memory-cell" title="[A:8]">0</div><div class="memory-cell" title="[A:9]">0</div><div class="memory-cell" title="[A:A]">0</div><div class="memory-cell" title="[A:B]">0</div><div class="memory-cell" title="[A:C]">0</div><div class="memory-cell" title="[A:D]">0</div><div class="memory-cell" title="[A:E]">0</div><div class="memory-cell" title="[A:F]">0</div><div class="memory-label">B</div><div class="memory-cell" title="[B:0]">0</div><div class="memory-cell" title="[B:1]">0</div><div class="memory-cell" title="[B:2]">0</div><div class="memory-cell" title="[B:3]">0</div><div class="memory-cell" title="[B:4]">0</div><div class="memory-cell" title="[B:5]">0</div><div class="memory-cell" title="[B:6]">0</div><div class="memory-cell" title="[B:7]">0</div><div class="memory-cell" title="[B:8]">0</div><div class="memory-cell" title="[B:9]">0</div><div class="memory-cell" title="[B:A]">0</div><div class="memory-cell" title="[B:B]">0</div><div class="memory-cell" title="[B:C]">0</div><div class="memory-cell" title="[B:D]">0</div><div class="memory-cell" title="[B:E]">0</div><div class="memory-cell" title="[B:F]">0</div><div class="memory-label">C</div><div class="memory-cell" title="[C:0]">0</div><div class="memory-cell" title="[C:1]">0</div><div class="memory-cell" title="[C:2]">0</div><div class="memory-cell" title="[C:3]">0</div><div class="memory-cell" title="[C:4]">0</div><div class="memory-cell" title="[C:5]">0</div><div class="memory-cell" title="[C:6]">0</div><div class="memory-cell" title="[C:7]">0</div><div class="memory-cell" title="[C:8]">0</div><div class="memory-cell" title="[C:9]">0</div><div class="memory-cell" title="[C:A]">0</div><div class="memory-cell" title="[C:B]">0</div><div class="memory-cell" title="[C:C]">0</div><div class="memory-cell" title="[C:D]">0</div><div class="memory-cell" title="[C:E]">0</div><div class="memory-cell" title="[C:F]">0</div><div class="memory-label">D</div><div class="memory-cell" title="[D:0]">0</div><div class="memory-cell" title="[D:1]">0</div><div class="memory-cell" title="[D:2]">0</div><div class="memory-cell" title="[D:3]">0</div><div class="memory-cell" title="[D:4]">0</div><div class="memory-cell" title="[D:5]">0</div><div class="memory-cell" title="[D:6]">0</div><div class="memory-cell" title="[D:7]">0</div><div class="memory-cell" title="[D:8]">0</div><div class="memory-cell" title="[D:9]">0</div><div class="memory-cell" title="[D:A]">0</div><div class="memory-cell" title="[D:B]">0</div><div class="memory-cell" title="[D:C]">0</div><div class="memory-cell" title="[D:D]">0</div><div class="memory-cell" title="[D:E]">0</div><div class="memory-cell" title="[D:F]">0</div><div class="memory-label">E</div><div class="memory-cell" title="[E:0]">0</div><div class="memory-cell" title="[E:1]">0</div><div class="memory-cell" title="[E:2]">0</div><div class="memory-cell" title="[E:3]">0</div><div class="memory-cell" title="[E:4]">0</div><div class="memory-cell" title="[E:5]">0</div><div class="memory-cell" title="[E:6]">0</div><div class="memory-cell" title="[E:7]">0</div><div class="memory-cell" title="[E:8]">0</div><div class="memory-cell" title="[E:9]">0</div><div class="memory-cell" title="[E:A]">0</div><div class="memory-cell" title="[E:B]">0</div><div class="memory-cell" title="[E:C]">0</div><div class="memory-cell" title="[E:D]">0</div><div class="memory-cell" title="[E:E]">0</div><div class="memory-cell" title="[E:F]">0</div><div class="memory-label">F</div><div class="memory-cell video" title="[F:0]">0</div><div class="memory-cell video" title="[F:1]">0</div><div class="memory-cell video" title="[F:2]">0</div><div class="memory-cell video" title="[F:3]">0</div><div class="memory-cell video" title="[F:4]">1</div><div class="memory-cell video" title="[F:5]">0</div><div class="memory-cell video" title="[F:6]">0</div><div class="memory-cell video" title="[F:7]">0</div><div class="memory-cell video" title="[F:8]">1</div><div class="memory-cell video" title="[F:9]">0</div><div class="memory-cell video" title="[F:A]">0</div><div class="memory-cell video" title="[F:B]">0</div><div class="memory-cell video" title="[F:C]">1</div><div class="memory-cell video" title="[F:D]">0</div><div class="memory-cell video" title="[F:E]">0</div><div class="memory-cell video" title="[F:F]">0</div></div>
+      </div>
+    </section>
+  
+      
+    <section class="panel display-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Display Matrix</h2>
+        <span class="pill">4 x 4</span>
+      </div>
+      <div class="panel-body">
+        <div class="display-wrap">
+          <div class="display-grid"><div class="pixel" title="pixel(0, 0) / [F:0]"></div><div class="pixel" title="pixel(1, 0) / [F:1]"></div><div class="pixel" title="pixel(2, 0) / [F:2]"></div><div class="pixel" title="pixel(3, 0) / [F:3]"></div><div class="pixel on" title="pixel(0, 1) / [F:4]"></div><div class="pixel" title="pixel(1, 1) / [F:5]"></div><div class="pixel" title="pixel(2, 1) / [F:6]"></div><div class="pixel" title="pixel(3, 1) / [F:7]"></div><div class="pixel on" title="pixel(0, 2) / [F:8]"></div><div class="pixel" title="pixel(1, 2) / [F:9]"></div><div class="pixel" title="pixel(2, 2) / [F:A]"></div><div class="pixel" title="pixel(3, 2) / [F:B]"></div><div class="pixel on" title="pixel(0, 3) / [F:C]"></div><div class="pixel" title="pixel(1, 3) / [F:D]"></div><div class="pixel" title="pixel(2, 3) / [F:E]"></div><div class="pixel" title="pixel(3, 3) / [F:F]"></div></div>
+          <div class="display-meta">
+            <div class="stat-row">
+              <span class="stat-name">VRAM</span>
+              <span class="stat-value">F</span>
+              <span>bank</span>
+            </div>
+            <div class="stat-row">
+              <span class="stat-name">On</span>
+              <span class="stat-value">3</span>
+              <span>pixels</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  
+    </main>
+  
+    </div>
+  </body>
+</html>
