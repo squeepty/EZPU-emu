@@ -108,6 +108,10 @@ export function renderStyles(): string {
       padding: 0 10px;
     }
 
+    .button:not(:disabled) {
+      cursor: pointer;
+    }
+
     .button.primary {
       background: var(--accent);
       color: #061019;
@@ -213,6 +217,34 @@ export function renderStyles(): string {
       white-space: pre;
     }
 
+    .source-listing {
+      display: grid;
+      gap: 2px;
+      white-space: pre-wrap;
+    }
+
+    .source-line {
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 10px;
+      min-height: 23px;
+      align-items: center;
+      padding: 2px 6px;
+      border: 1px solid transparent;
+      border-radius: 5px;
+    }
+
+    .source-line.current {
+      background: var(--pc-soft);
+      border-color: #6d4f18;
+    }
+
+    .source-line-number {
+      color: var(--muted);
+      text-align: right;
+      user-select: none;
+    }
+
     .listing {
       width: 100%;
       border-collapse: collapse;
@@ -241,6 +273,11 @@ export function renderStyles(): string {
     .listing tr.current td {
       background: var(--pc-soft);
       border-bottom-color: #6d4f18;
+    }
+
+    .listing tr.executed:not(.current) td {
+      background: #0f2630;
+      border-bottom-color: #2a6478;
     }
 
     .address {
@@ -279,6 +316,12 @@ export function renderStyles(): string {
       background: #0d151d;
       font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
       font-size: 12px;
+    }
+
+    .register-row.changed {
+      border-color: var(--video);
+      background: #0f281f;
+      box-shadow: inset 3px 0 0 var(--video);
     }
 
     .wide-value {

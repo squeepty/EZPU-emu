@@ -9,6 +9,7 @@ type TokenType =
 interface Token {
   type: TokenType;
   value: string;
+  line: number;
 }
 
 type Program = {
@@ -24,18 +25,21 @@ type Statement =
 
 type VariableDeclaration = {
   type: "VariableDeclaration";
+  line: number;
   name: string;
   init: Expression;
 };
 
 type Assignment = {
   type: "Assignment";
+  line: number;
   name: string;
   value: Expression;
 };
 
 type PixelAssignment = {
   type: "PixelAssignment";
+  line: number;
   x: Expression;
   y: Expression;
   value: Expression;
@@ -43,6 +47,7 @@ type PixelAssignment = {
 
 type WhileStatement = {
   type: "WhileStatement";
+  line: number;
   condition: Condition;
   body: Statement[];
 };
@@ -83,31 +88,43 @@ export class EZCCompiler {
   private tokens: Token[] = [];
   private position = 0;
   private code: string[] = [];
+  private sourceMap: Array<number | null> = [];
   private variables = new Map<string, number>();
   private nextReg = 0;
   private nextLabelId = 0;
+  private currentSourceLine: number | null = null;
 
   public compileToAssembly(source: string): string[] {
     this.tokens = this.lex(source);
     this.position = 0;
     this.code = [];
+    this.sourceMap = [];
     this.variables.clear();
     this.nextReg = 0;
     this.nextLabelId = 0;
+    this.currentSourceLine = null;
 
     const program = this.parseProgram();
     this.compileProgram(program);
     return this.code;
   }
 
+  public getAssemblySourceMap(): Array<number | null> {
+    return [...this.sourceMap];
+  }
+
   private lex(source: string): Token[] {
     const tokens: Token[] = [];
     let index = 0;
+    let line = 1;
 
     while (index < source.length) {
       const char = source[index];
 
       if (/\s/.test(char)) {
+        if (char === "\n") {
+          line += 1;
+        }
         index += 1;
         continue;
       }
@@ -120,7 +137,7 @@ export class EZCCompiler {
         }
         const value = source.slice(start, index);
         const type: TokenType = KEYWORDS.has(value) ? "keyword" : "identifier";
-        tokens.push({ type, value });
+        tokens.push({ type, value, line });
         continue;
       }
 
@@ -137,25 +154,25 @@ export class EZCCompiler {
             index += 1;
           }
         }
-        tokens.push({ type: "number", value: source.slice(start, index) });
+        tokens.push({ type: "number", value: source.slice(start, index), line });
         continue;
       }
 
       const twoChar = source.slice(index, index + 2);
       if (twoChar === "==" || twoChar === "!=") {
-        tokens.push({ type: "operator", value: twoChar });
+        tokens.push({ type: "operator", value: twoChar, line });
         index += 2;
         continue;
       }
 
       if (/[+\-<>=]/.test(char)) {
-        tokens.push({ type: "operator", value: char });
+        tokens.push({ type: "operator", value: char, line });
         index += 1;
         continue;
       }
 
       if (/[(),;{}]/.test(char)) {
-        tokens.push({ type: "symbol", value: char });
+        tokens.push({ type: "symbol", value: char, line });
         index += 1;
         continue;
       }
@@ -163,7 +180,7 @@ export class EZCCompiler {
       throw new Error(`Unexpected character '${char}' at position ${index}.`);
     }
 
-    tokens.push({ type: "eof", value: "" });
+    tokens.push({ type: "eof", value: "", line });
     return tokens;
   }
 
@@ -226,7 +243,7 @@ export class EZCCompiler {
   }
 
   private parseVariableDeclaration(): VariableDeclaration {
-    this.consume("let");
+    const start = this.consume("let");
     const nameToken = this.consume();
     if (nameToken.type !== "identifier") {
       throw new Error(`Expected variable name after let, got '${nameToken.value}'.`);
@@ -234,7 +251,7 @@ export class EZCCompiler {
     this.consume("=");
     const init = this.parseExpression();
     this.consume(";");
-    return { type: "VariableDeclaration", name: nameToken.value, init };
+    return { type: "VariableDeclaration", line: start.line, name: nameToken.value, init };
   }
 
   private parseAssignment(): Assignment {
@@ -245,11 +262,11 @@ export class EZCCompiler {
     this.consume("=");
     const value = this.parseExpression();
     this.consume(";");
-    return { type: "Assignment", name: nameToken.value, value };
+    return { type: "Assignment", line: nameToken.line, name: nameToken.value, value };
   }
 
   private parsePixelAssignment(): PixelAssignment {
-    this.consume("pixel");
+    const start = this.consume("pixel");
     this.consume("(");
     const xExpr = this.parseExpression();
     this.consume(",");
@@ -261,6 +278,7 @@ export class EZCCompiler {
 
     return {
       type: "PixelAssignment",
+      line: start.line,
       x: xExpr,
       y: yExpr,
       value,
@@ -268,7 +286,7 @@ export class EZCCompiler {
   }
 
   private parseWhileStatement(): WhileStatement {
-    this.consume("while");
+    const start = this.consume("while");
     this.consume("(");
     const condition = this.parseCondition();
     this.consume(")");
@@ -278,7 +296,7 @@ export class EZCCompiler {
       body.push(this.parseStatement());
     }
     this.consume("}");
-    return { type: "WhileStatement", condition, body };
+    return { type: "WhileStatement", line: start.line, condition, body };
   }
 
   private parseCondition(): Condition {
@@ -340,51 +358,58 @@ export class EZCCompiler {
   }
 
   private compileStatement(statement: Statement): void {
-    switch (statement.type) {
-      case "VariableDeclaration":
-        this.allocateVariable(statement.name);
-        this.compileExpressionToRegister(statement.init, this.getVariableRegister(statement.name));
-        break;
-      case "Assignment":
-        this.assertVariableDeclared(statement.name);
-        this.compileExpressionToRegister(statement.value, this.getVariableRegister(statement.name));
-        break;
-      case "PixelAssignment": {
-        const usedRegs = Array.from(this.variables.values());
-        const valueReg = this.getTempRegister(usedRegs);
-        usedRegs.push(valueReg);
-        this.compileExpressionToRegister(statement.value, valueReg);
+    const previousSourceLine = this.currentSourceLine;
+    this.currentSourceLine = statement.line;
 
-        if (this.isNumericLiteral(statement.x) && this.isNumericLiteral(statement.y)) {
-          const address = this.compilePixelAddress(statement.x.value, statement.y.value);
-          this.emit(`STORE ${REGISTER_NAMES[valueReg]}, [15:${address}]`);
+    try {
+      switch (statement.type) {
+        case "VariableDeclaration":
+          this.allocateVariable(statement.name);
+          this.compileExpressionToRegister(statement.init, this.getVariableRegister(statement.name));
+          break;
+        case "Assignment":
+          this.assertVariableDeclared(statement.name);
+          this.compileExpressionToRegister(statement.value, this.getVariableRegister(statement.name));
+          break;
+        case "PixelAssignment": {
+          const usedRegs = Array.from(this.variables.values());
+          const valueReg = this.getTempRegister(usedRegs);
+          usedRegs.push(valueReg);
+          this.compileExpressionToRegister(statement.value, valueReg);
+
+          if (this.isNumericLiteral(statement.x) && this.isNumericLiteral(statement.y)) {
+            const address = this.compilePixelAddress(statement.x.value, statement.y.value);
+            this.emit(`STORE ${REGISTER_NAMES[valueReg]}, [15:${address}]`);
+            break;
+          }
+
+          let xReg: number | null = null;
+          if (!this.isNumericLiteral(statement.x)) {
+            xReg = this.getTempRegister(usedRegs);
+            usedRegs.push(xReg);
+            this.compileExpressionToRegister(statement.x, xReg);
+          }
+
+          let yReg: number | null = null;
+          if (!this.isNumericLiteral(statement.y)) {
+            yReg = this.getTempRegister(usedRegs);
+            usedRegs.push(yReg);
+            this.compileExpressionToRegister(statement.y, yReg);
+          }
+
+          const addressReg = this.getTempRegister(usedRegs);
+          this.compilePixelAddressToRegister(addressReg, statement.x, statement.y, xReg, yReg);
+          this.emit(`STOREI ${REGISTER_NAMES[valueReg]}, [${REGISTER_NAMES[addressReg]}]`);
           break;
         }
-
-        let xReg: number | null = null;
-        if (!this.isNumericLiteral(statement.x)) {
-          xReg = this.getTempRegister(usedRegs);
-          usedRegs.push(xReg);
-          this.compileExpressionToRegister(statement.x, xReg);
-        }
-
-        let yReg: number | null = null;
-        if (!this.isNumericLiteral(statement.y)) {
-          yReg = this.getTempRegister(usedRegs);
-          usedRegs.push(yReg);
-          this.compileExpressionToRegister(statement.y, yReg);
-        }
-
-        const addressReg = this.getTempRegister(usedRegs);
-        this.compilePixelAddressToRegister(addressReg, statement.x, statement.y, xReg, yReg);
-        this.emit(`STOREI ${REGISTER_NAMES[valueReg]}, [${REGISTER_NAMES[addressReg]}]`);
-        break;
+        case "WhileStatement":
+          this.compileWhileStatement(statement);
+          break;
+        default:
+          throw new Error(`Unsupported statement type ${(statement as any).type}.`);
       }
-      case "WhileStatement":
-        this.compileWhileStatement(statement);
-        break;
-      default:
-        throw new Error(`Unsupported statement type ${(statement as any).type}.`);
+    } finally {
+      this.currentSourceLine = previousSourceLine;
     }
   }
 
@@ -394,14 +419,19 @@ export class EZCCompiler {
     const exitLabel = this.newLabel("WHILE_END");
 
     this.emitLabel(startLabel);
+    const previousSourceLine = this.currentSourceLine;
+    this.currentSourceLine = statement.line;
     this.compileCondition(statement.condition, bodyLabel, exitLabel);
+    this.currentSourceLine = previousSourceLine;
 
     this.emitLabel(bodyLabel);
     for (const inner of statement.body) {
       this.compileStatement(inner);
     }
 
+    this.currentSourceLine = statement.line;
     this.emit(`JMP ${startLabel}`);
+    this.currentSourceLine = previousSourceLine;
     this.emitLabel(exitLabel);
   }
 
@@ -639,10 +669,12 @@ export class EZCCompiler {
 
   private emit(line: string): void {
     this.code.push(line);
+    this.sourceMap.push(this.currentSourceLine);
   }
 
   private emitLabel(label: string): void {
     this.code.push(`${label}:`);
+    this.sourceMap.push(null);
   }
 
   private newLabel(prefix: string): string {

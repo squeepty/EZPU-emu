@@ -14,10 +14,10 @@ function renderRegisterRows(cpu: CPU): string {
   return REGISTERS.map(({ index, name }) => {
     const value = cpu.getRegister(index);
     return `
-      <div class="register-row">
+      <div class="register-row" data-register-row="${index}">
         <span class="register-name">${name}</span>
-        <span class="register-value">${hexNibble(value)}</span>
-        <span>${binaryNibble(value)}</span>
+        <span class="register-value" data-register-value="${index}">${hexNibble(value)}</span>
+        <span data-register-binary="${index}">${binaryNibble(value)}</span>
       </div>
     `;
   }).join("");
@@ -39,7 +39,7 @@ export function renderCpuStateView(cpu: CPU, memory: Memory): string {
     <section class="panel cpu-panel">
       <div class="panel-header">
         <h2 class="panel-title">CPU State</h2>
-        <span class="pill">${cpu.isHalted() ? "halted" : "ready"}</span>
+        <span class="pill" id="cpu-status">${cpu.isHalted() ? "halted" : "ready"}</span>
       </div>
       <div class="panel-body cpu-state">
         <div class="state-section">
@@ -51,18 +51,18 @@ export function renderCpuStateView(cpu: CPU, memory: Memory): string {
           <div class="state-grid">
             <div class="pc-row">
               <span class="pc-name">PCHIGH</span>
-              <span class="pc-value">${hexNibble(pc.bank)}</span>
+              <span class="pc-value" id="pc-bank">${hexNibble(pc.bank)}</span>
               <span>bank</span>
             </div>
             <div class="pc-row">
               <span class="pc-name">PCLOW</span>
-              <span class="pc-value">${hexNibble(pc.address)}</span>
+              <span class="pc-value" id="pc-address">${hexNibble(pc.address)}</span>
               <span>address</span>
             </div>
             <div class="pc-row">
               <span class="pc-name">PC</span>
-              <span class="pc-value">${hexByte(absolutePc)}</span>
-              <span>${hexNibble(pc.bank)}:${hexNibble(pc.address)}</span>
+              <span class="pc-value" id="pc-absolute">${hexByte(absolutePc)}</span>
+              <span id="pc-label">${hexNibble(pc.bank)}:${hexNibble(pc.address)}</span>
             </div>
           </div>
         </div>
@@ -71,12 +71,12 @@ export function renderCpuStateView(cpu: CPU, memory: Memory): string {
           <div class="state-grid">
             <div class="stat-row">
               <span class="stat-name">Word</span>
-              <span class="stat-value">${word}</span>
+              <span class="stat-value" id="current-word">${word}</span>
               <span>nibbles</span>
             </div>
             <div class="stat-row wide-value">
               <span class="stat-name">Decode</span>
-              <span class="stat-value">${escapeHtml(decodeMachineWord(word))}</span>
+              <span class="stat-value" id="current-decode">${escapeHtml(decodeMachineWord(word))}</span>
             </div>
           </div>
         </div>
@@ -84,4 +84,3 @@ export function renderCpuStateView(cpu: CPU, memory: Memory): string {
     </section>
   `;
 }
-

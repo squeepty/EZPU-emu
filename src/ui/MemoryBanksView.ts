@@ -19,6 +19,24 @@ function instructionStartKeys(machineCode: MachineCodeRecord[]): Set<string> {
   return new Set(machineCode.map((record) => `${record.bank}:${record.address}`));
 }
 
+function isCurrentInstructionCell(
+  currentPc: { bank: number; address: number },
+  bank: number,
+  address: number,
+): boolean {
+  if (bank !== currentPc.bank) {
+    return false;
+  }
+
+  for (let offset = 0; offset < 4; offset += 1) {
+    if (((currentPc.address + offset) & 0xf) === address) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export function renderMemoryBanksView(
   memory: Memory,
   currentPc: { bank: number; address: number },
@@ -43,13 +61,13 @@ export function renderMemoryBanksView(
         instructionCells.has(key) ? "instruction" : "",
         instructionStarts.has(key) ? "instruction-start" : "",
         bank === Memory.VIDEO_BANK ? "video" : "",
-        bank === currentPc.bank && address === currentPc.address ? "pc" : "",
+        isCurrentInstructionCell(currentPc, bank, address) ? "pc" : "",
       ]
         .filter(Boolean)
         .join(" ");
 
       cells.push(
-        `<div class="${classes}" title="[${hexNibble(bank)}:${hexNibble(address)}]">${hexNibble(value)}</div>`,
+        `<div class="${classes}" data-bank="${bank}" data-address="${address}" title="[${hexNibble(bank)}:${hexNibble(address)}]">${hexNibble(value)}</div>`,
       );
     }
   }

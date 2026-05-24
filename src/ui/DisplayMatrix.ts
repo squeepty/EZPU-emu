@@ -13,7 +13,7 @@ export function renderDisplayMatrix(memory: Memory): string {
       onCount += 1;
     }
     pixels.push(
-      `<div class="pixel${value === 1 ? " on" : ""}" title="pixel(${x}, ${y}) / [F:${hexNibble(address)}]"></div>`,
+      `<div class="pixel${value === 1 ? " on" : ""}" data-address="${address}" title="pixel(${x}, ${y}) / [F:${hexNibble(address)}]"></div>`,
     );
   }
 
@@ -34,7 +34,7 @@ export function renderDisplayMatrix(memory: Memory): string {
             </div>
             <div class="stat-row">
               <span class="stat-name">On</span>
-              <span class="stat-value">${onCount}</span>
+              <span class="stat-value" id="display-on-count">${onCount}</span>
               <span>pixels</span>
             </div>
           </div>

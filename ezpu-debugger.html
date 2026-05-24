@@ -113,6 +113,10 @@
       padding: 0 10px;
     }
 
+    .button:not(:disabled) {
+      cursor: pointer;
+    }
+
     .button.primary {
       background: var(--accent);
       color: #061019;
@@ -218,6 +222,34 @@
       white-space: pre;
     }
 
+    .source-listing {
+      display: grid;
+      gap: 2px;
+      white-space: pre-wrap;
+    }
+
+    .source-line {
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 10px;
+      min-height: 23px;
+      align-items: center;
+      padding: 2px 6px;
+      border: 1px solid transparent;
+      border-radius: 5px;
+    }
+
+    .source-line.current {
+      background: var(--pc-soft);
+      border-color: #6d4f18;
+    }
+
+    .source-line-number {
+      color: var(--muted);
+      text-align: right;
+      user-select: none;
+    }
+
     .listing {
       width: 100%;
       border-collapse: collapse;
@@ -246,6 +278,11 @@
     .listing tr.current td {
       background: var(--pc-soft);
       border-bottom-color: #6d4f18;
+    }
+
+    .listing tr.executed:not(.current) td {
+      background: #0f2630;
+      border-bottom-color: #2a6478;
     }
 
     .address {
@@ -284,6 +321,12 @@
       background: #0d151d;
       font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
       font-size: 12px;
+    }
+
+    .register-row.changed {
+      border-color: var(--video);
+      background: #0f281f;
+      box-shadow: inset 3px 0 0 var(--video);
     }
 
     .wide-value {
@@ -428,15 +471,16 @@
         </div>
         <div>
           <h1>EZPU Debugger</h1>
-          <p class="toolbar-subtitle">Final-state educational workbench</p>
+          <p class="toolbar-subtitle">Step-by-step educational workbench</p>
         </div>
       </div>
       <div class="toolbar-actions">
-        <button class="button primary" disabled>Step</button>
-        <button class="button" disabled>Run</button>
-        <button class="button" disabled>Reset</button>
+        <button class="button primary" id="step-button">Step</button>
+        <button class="button" id="run-button">Run</button>
+        <button class="button" id="reset-button">Reset</button>
         <button class="button" disabled>Compile</button>
-        <span class="pill">State: Halted</span>
+        <span class="pill">State: <span id="run-status">Paused</span></span>
+        <span class="pill">Step <span id="step-index">0</span>/<span id="step-count">40</span></span>
         <span class="pill">15 instructions</span>
       </div>
     </header>
@@ -450,11 +494,32 @@
         <span class="pill">simplified C</span>
       </div>
       <div class="panel-body">
-        <pre class="code-block">let x = 3;
-while (x != 0) {
-  pixel(0,x) = 1;
-  x = x - 1;
-}</pre>
+        <pre class="code-block source-listing">
+          <div class="source-line current" data-source-line="2">
+            <span class="source-line-number">02</span>
+            <code>let x = 3;</code>
+          </div>
+    
+          <div class="source-line" data-source-line="3">
+            <span class="source-line-number">03</span>
+            <code>while (x != 0) {</code>
+          </div>
+    
+          <div class="source-line" data-source-line="4">
+            <span class="source-line-number">04</span>
+            <code>  pixel(0,x) = 1;</code>
+          </div>
+    
+          <div class="source-line" data-source-line="5">
+            <span class="source-line-number">05</span>
+            <code>  x = x - 1;</code>
+          </div>
+    
+          <div class="source-line" data-source-line="6">
+            <span class="source-line-number">06</span>
+            <code>}</code>
+          </div>
+    </pre>
       </div>
     </section>
   
@@ -476,7 +541,7 @@ while (x != 0) {
             </tr>
           </thead>
           <tbody>
-        <tr>
+        <tr class="current" data-pc="0:0" data-source-line="2">
           <td class="address">00</td>
           <td class="address">0:0</td>
           <td>SET D1, 3</td>
@@ -484,7 +549,7 @@ while (x != 0) {
           <td>SET D1, 3</td>
         </tr>
       
-        <tr>
+        <tr data-pc="" data-source-line="">
           <td class="address">01</td>
           <td class="address"></td>
           <td>WHILE_START_0:</td>
@@ -492,7 +557,7 @@ while (x != 0) {
           <td></td>
         </tr>
       
-        <tr>
+        <tr data-pc="0:4" data-source-line="3">
           <td class="address">02</td>
           <td class="address">0:4</td>
           <td>BEQ D1, 0, WHILE_FALSE_3</td>
@@ -500,7 +565,7 @@ while (x != 0) {
           <td>BEQ D1, 0, C</td>
         </tr>
       
-        <tr>
+        <tr data-pc="0:8" data-source-line="3">
           <td class="address">03</td>
           <td class="address">0:8</td>
           <td>JMP WHILE_BODY_1</td>
@@ -508,7 +573,7 @@ while (x != 0) {
           <td>JMP 1, 0</td>
         </tr>
       
-        <tr>
+        <tr data-pc="" data-source-line="">
           <td class="address">04</td>
           <td class="address"></td>
           <td>WHILE_FALSE_3:</td>
@@ -516,7 +581,7 @@ while (x != 0) {
           <td></td>
         </tr>
       
-        <tr>
+        <tr data-pc="0:12" data-source-line="3">
           <td class="address">05</td>
           <td class="address">0:C</td>
           <td>JMP WHILE_END_2</td>
@@ -524,7 +589,7 @@ while (x != 0) {
           <td>JMP 3, 8</td>
         </tr>
       
-        <tr>
+        <tr data-pc="" data-source-line="">
           <td class="address">06</td>
           <td class="address"></td>
           <td>WHILE_BODY_1:</td>
@@ -532,7 +597,7 @@ while (x != 0) {
           <td></td>
         </tr>
       
-        <tr>
+        <tr data-pc="1:0" data-source-line="4">
           <td class="address">07</td>
           <td class="address">1:0</td>
           <td>SET D2, 1</td>
@@ -540,7 +605,7 @@ while (x != 0) {
           <td>SET D2, 1</td>
         </tr>
       
-        <tr>
+        <tr data-pc="1:4" data-source-line="4">
           <td class="address">08</td>
           <td class="address">1:4</td>
           <td>MOV D3, D1</td>
@@ -548,7 +613,7 @@ while (x != 0) {
           <td>MOV D3, D1</td>
         </tr>
       
-        <tr>
+        <tr data-pc="1:8" data-source-line="4">
           <td class="address">09</td>
           <td class="address">1:8</td>
           <td>MOV D4, D3</td>
@@ -556,7 +621,7 @@ while (x != 0) {
           <td>MOV D4, D3</td>
         </tr>
       
-        <tr>
+        <tr data-pc="1:12" data-source-line="4">
           <td class="address">10</td>
           <td class="address">1:C</td>
           <td>ADD D4, D3</td>
@@ -564,7 +629,7 @@ while (x != 0) {
           <td>ADD D4, D3</td>
         </tr>
       
-        <tr>
+        <tr data-pc="2:0" data-source-line="4">
           <td class="address">11</td>
           <td class="address">2:0</td>
           <td>ADD D4, D3</td>
@@ -572,7 +637,7 @@ while (x != 0) {
           <td>ADD D4, D3</td>
         </tr>
       
-        <tr>
+        <tr data-pc="2:4" data-source-line="4">
           <td class="address">12</td>
           <td class="address">2:4</td>
           <td>ADD D4, D3</td>
@@ -580,7 +645,7 @@ while (x != 0) {
           <td>ADD D4, D3</td>
         </tr>
       
-        <tr>
+        <tr data-pc="2:8" data-source-line="4">
           <td class="address">13</td>
           <td class="address">2:8</td>
           <td>ADDI D4, 0</td>
@@ -588,7 +653,7 @@ while (x != 0) {
           <td>ADDI D4, 0</td>
         </tr>
       
-        <tr>
+        <tr data-pc="2:12" data-source-line="4">
           <td class="address">14</td>
           <td class="address">2:C</td>
           <td>STOREI D2, [D4]</td>
@@ -596,7 +661,7 @@ while (x != 0) {
           <td>STOREI D2, [D4]</td>
         </tr>
       
-        <tr>
+        <tr data-pc="3:0" data-source-line="5">
           <td class="address">15</td>
           <td class="address">3:0</td>
           <td>SUBI D1, 1</td>
@@ -604,7 +669,7 @@ while (x != 0) {
           <td>SUBI D1, 1</td>
         </tr>
       
-        <tr>
+        <tr data-pc="3:4" data-source-line="3">
           <td class="address">16</td>
           <td class="address">3:4</td>
           <td>JMP WHILE_START_0</td>
@@ -612,7 +677,7 @@ while (x != 0) {
           <td>JMP 0, 4</td>
         </tr>
       
-        <tr>
+        <tr data-pc="" data-source-line="">
           <td class="address">17</td>
           <td class="address"></td>
           <td>WHILE_END_2:</td>
@@ -620,7 +685,7 @@ while (x != 0) {
           <td></td>
         </tr>
       
-        <tr class="current">
+        <tr data-pc="3:8" data-source-line="">
           <td class="address">18</td>
           <td class="address">3:8</td>
           <td>HALT</td>
@@ -636,34 +701,34 @@ while (x != 0) {
     <section class="panel cpu-panel">
       <div class="panel-header">
         <h2 class="panel-title">CPU State</h2>
-        <span class="pill">halted</span>
+        <span class="pill" id="cpu-status">ready</span>
       </div>
       <div class="panel-body cpu-state">
         <div class="state-section">
           <h3 class="section-title">Registers</h3>
           <div class="register-grid">
-      <div class="register-row">
+      <div class="register-row" data-register-row="0">
         <span class="register-name">D1</span>
-        <span class="register-value">0</span>
-        <span>0000</span>
+        <span class="register-value" data-register-value="0">0</span>
+        <span data-register-binary="0">0000</span>
       </div>
     
-      <div class="register-row">
+      <div class="register-row" data-register-row="1">
         <span class="register-name">D2</span>
-        <span class="register-value">1</span>
-        <span>0001</span>
+        <span class="register-value" data-register-value="1">0</span>
+        <span data-register-binary="1">0000</span>
       </div>
     
-      <div class="register-row">
+      <div class="register-row" data-register-row="2">
         <span class="register-name">D3</span>
-        <span class="register-value">1</span>
-        <span>0001</span>
+        <span class="register-value" data-register-value="2">0</span>
+        <span data-register-binary="2">0000</span>
       </div>
     
-      <div class="register-row">
+      <div class="register-row" data-register-row="3">
         <span class="register-name">D4</span>
-        <span class="register-value">4</span>
-        <span>0100</span>
+        <span class="register-value" data-register-value="3">0</span>
+        <span data-register-binary="3">0000</span>
       </div>
     </div>
         </div>
@@ -672,18 +737,18 @@ while (x != 0) {
           <div class="state-grid">
             <div class="pc-row">
               <span class="pc-name">PCHIGH</span>
-              <span class="pc-value">3</span>
+              <span class="pc-value" id="pc-bank">0</span>
               <span>bank</span>
             </div>
             <div class="pc-row">
               <span class="pc-name">PCLOW</span>
-              <span class="pc-value">8</span>
+              <span class="pc-value" id="pc-address">0</span>
               <span>address</span>
             </div>
             <div class="pc-row">
               <span class="pc-name">PC</span>
-              <span class="pc-value">38</span>
-              <span>3:8</span>
+              <span class="pc-value" id="pc-absolute">00</span>
+              <span id="pc-label">0:0</span>
             </div>
           </div>
         </div>
@@ -692,12 +757,12 @@ while (x != 0) {
           <div class="state-grid">
             <div class="stat-row">
               <span class="stat-name">Word</span>
-              <span class="stat-value">C000</span>
+              <span class="stat-value" id="current-word">7030</span>
               <span>nibbles</span>
             </div>
             <div class="stat-row wide-value">
               <span class="stat-name">Decode</span>
-              <span class="stat-value">HALT</span>
+              <span class="stat-value" id="current-decode">SET D1, 3</span>
             </div>
           </div>
         </div>
@@ -711,7 +776,7 @@ while (x != 0) {
         <span class="pill">bank F is video RAM</span>
       </div>
       <div class="panel-body">
-        <div class="memory-grid"><div class="memory-head">Bank</div><div class="memory-head">0</div><div class="memory-head">1</div><div class="memory-head">2</div><div class="memory-head">3</div><div class="memory-head">4</div><div class="memory-head">5</div><div class="memory-head">6</div><div class="memory-head">7</div><div class="memory-head">8</div><div class="memory-head">9</div><div class="memory-head">A</div><div class="memory-head">B</div><div class="memory-head">C</div><div class="memory-head">D</div><div class="memory-head">E</div><div class="memory-head">F</div><div class="memory-label">0</div><div class="memory-cell instruction instruction-start" title="[0:0]">7</div><div class="memory-cell instruction" title="[0:1]">0</div><div class="memory-cell instruction" title="[0:2]">3</div><div class="memory-cell instruction" title="[0:3]">0</div><div class="memory-cell instruction instruction-start" title="[0:4]">8</div><div class="memory-cell instruction" title="[0:5]">0</div><div class="memory-cell instruction" title="[0:6]">0</div><div class="memory-cell instruction" title="[0:7]">C</div><div class="memory-cell instruction instruction-start" title="[0:8]">B</div><div class="memory-cell instruction" title="[0:9]">1</div><div class="memory-cell instruction" title="[0:A]">0</div><div class="memory-cell instruction" title="[0:B]">0</div><div class="memory-cell instruction instruction-start" title="[0:C]">B</div><div class="memory-cell instruction" title="[0:D]">3</div><div class="memory-cell instruction" title="[0:E]">8</div><div class="memory-cell instruction" title="[0:F]">0</div><div class="memory-label">1</div><div class="memory-cell instruction instruction-start" title="[1:0]">7</div><div class="memory-cell instruction" title="[1:1]">1</div><div class="memory-cell instruction" title="[1:2]">1</div><div class="memory-cell instruction" title="[1:3]">0</div><div class="memory-cell instruction instruction-start" title="[1:4]">2</div><div class="memory-cell instruction" title="[1:5]">2</div><div class="memory-cell instruction" title="[1:6]">0</div><div class="memory-cell instruction" title="[1:7]">0</div><div class="memory-cell instruction instruction-start" title="[1:8]">2</div><div class="memory-cell instruction" title="[1:9]">3</div><div class="memory-cell instruction" title="[1:A]">2</div><div class="memory-cell instruction" title="[1:B]">0</div><div class="memory-cell instruction instruction-start" title="[1:C]">3</div><div class="memory-cell instruction" title="[1:D]">3</div><div class="memory-cell instruction" title="[1:E]">2</div><div class="memory-cell instruction" title="[1:F]">0</div><div class="memory-label">2</div><div class="memory-cell instruction instruction-start" title="[2:0]">3</div><div class="memory-cell instruction" title="[2:1]">3</div><div class="memory-cell instruction" title="[2:2]">2</div><div class="memory-cell instruction" title="[2:3]">0</div><div class="memory-cell instruction instruction-start" title="[2:4]">3</div><div class="memory-cell instruction" title="[2:5]">3</div><div class="memory-cell instruction" title="[2:6]">2</div><div class="memory-cell instruction" title="[2:7]">0</div><div class="memory-cell instruction instruction-start" title="[2:8]">4</div><div class="memory-cell instruction" title="[2:9]">3</div><div class="memory-cell instruction" title="[2:A]">0</div><div class="memory-cell instruction" title="[2:B]">0</div><div class="memory-cell instruction instruction-start" title="[2:C]">E</div><div class="memory-cell instruction" title="[2:D]">1</div><div class="memory-cell instruction" title="[2:E]">3</div><div class="memory-cell instruction" title="[2:F]">0</div><div class="memory-label">3</div><div class="memory-cell instruction instruction-start" title="[3:0]">6</div><div class="memory-cell instruction" title="[3:1]">0</div><div class="memory-cell instruction" title="[3:2]">1</div><div class="memory-cell instruction" title="[3:3]">0</div><div class="memory-cell instruction instruction-start" title="[3:4]">B</div><div class="memory-cell instruction" title="[3:5]">0</div><div class="memory-cell instruction" title="[3:6]">4</div><div class="memory-cell instruction" title="[3:7]">0</div><div class="memory-cell instruction instruction-start pc" title="[3:8]">C</div><div class="memory-cell instruction" title="[3:9]">0</div><div class="memory-cell instruction" title="[3:A]">0</div><div class="memory-cell instruction" title="[3:B]">0</div><div class="memory-cell" title="[3:C]">0</div><div class="memory-cell" title="[3:D]">0</div><div class="memory-cell" title="[3:E]">0</div><div class="memory-cell" title="[3:F]">0</div><div class="memory-label">4</div><div class="memory-cell" title="[4:0]">0</div><div class="memory-cell" title="[4:1]">0</div><div class="memory-cell" title="[4:2]">0</div><div class="memory-cell" title="[4:3]">0</div><div class="memory-cell" title="[4:4]">0</div><div class="memory-cell" title="[4:5]">0</div><div class="memory-cell" title="[4:6]">0</div><div class="memory-cell" title="[4:7]">0</div><div class="memory-cell" title="[4:8]">0</div><div class="memory-cell" title="[4:9]">0</div><div class="memory-cell" title="[4:A]">0</div><div class="memory-cell" title="[4:B]">0</div><div class="memory-cell" title="[4:C]">0</div><div class="memory-cell" title="[4:D]">0</div><div class="memory-cell" title="[4:E]">0</div><div class="memory-cell" title="[4:F]">0</div><div class="memory-label">5</div><div class="memory-cell" title="[5:0]">0</div><div class="memory-cell" title="[5:1]">0</div><div class="memory-cell" title="[5:2]">0</div><div class="memory-cell" title="[5:3]">0</div><div class="memory-cell" title="[5:4]">0</div><div class="memory-cell" title="[5:5]">0</div><div class="memory-cell" title="[5:6]">0</div><div class="memory-cell" title="[5:7]">0</div><div class="memory-cell" title="[5:8]">0</div><div class="memory-cell" title="[5:9]">0</div><div class="memory-cell" title="[5:A]">0</div><div class="memory-cell" title="[5:B]">0</div><div class="memory-cell" title="[5:C]">0</div><div class="memory-cell" title="[5:D]">0</div><div class="memory-cell" title="[5:E]">0</div><div class="memory-cell" title="[5:F]">0</div><div class="memory-label">6</div><div class="memory-cell" title="[6:0]">0</div><div class="memory-cell" title="[6:1]">0</div><div class="memory-cell" title="[6:2]">0</div><div class="memory-cell" title="[6:3]">0</div><div class="memory-cell" title="[6:4]">0</div><div class="memory-cell" title="[6:5]">0</div><div class="memory-cell" title="[6:6]">0</div><div class="memory-cell" title="[6:7]">0</div><div class="memory-cell" title="[6:8]">0</div><div class="memory-cell" title="[6:9]">0</div><div class="memory-cell" title="[6:A]">0</div><div class="memory-cell" title="[6:B]">0</div><div class="memory-cell" title="[6:C]">0</div><div class="memory-cell" title="[6:D]">0</div><div class="memory-cell" title="[6:E]">0</div><div class="memory-cell" title="[6:F]">0</div><div class="memory-label">7</div><div class="memory-cell" title="[7:0]">0</div><div class="memory-cell" title="[7:1]">0</div><div class="memory-cell" title="[7:2]">0</div><div class="memory-cell" title="[7:3]">0</div><div class="memory-cell" title="[7:4]">0</div><div class="memory-cell" title="[7:5]">0</div><div class="memory-cell" title="[7:6]">0</div><div class="memory-cell" title="[7:7]">0</div><div class="memory-cell" title="[7:8]">0</div><div class="memory-cell" title="[7:9]">0</div><div class="memory-cell" title="[7:A]">0</div><div class="memory-cell" title="[7:B]">0</div><div class="memory-cell" title="[7:C]">0</div><div class="memory-cell" title="[7:D]">0</div><div class="memory-cell" title="[7:E]">0</div><div class="memory-cell" title="[7:F]">0</div><div class="memory-label">8</div><div class="memory-cell" title="[8:0]">0</div><div class="memory-cell" title="[8:1]">0</div><div class="memory-cell" title="[8:2]">0</div><div class="memory-cell" title="[8:3]">0</div><div class="memory-cell" title="[8:4]">0</div><div class="memory-cell" title="[8:5]">0</div><div class="memory-cell" title="[8:6]">0</div><div class="memory-cell" title="[8:7]">0</div><div class="memory-cell" title="[8:8]">0</div><div class="memory-cell" title="[8:9]">0</div><div class="memory-cell" title="[8:A]">0</div><div class="memory-cell" title="[8:B]">0</div><div class="memory-cell" title="[8:C]">0</div><div class="memory-cell" title="[8:D]">0</div><div class="memory-cell" title="[8:E]">0</div><div class="memory-cell" title="[8:F]">0</div><div class="memory-label">9</div><div class="memory-cell" title="[9:0]">0</div><div class="memory-cell" title="[9:1]">0</div><div class="memory-cell" title="[9:2]">0</div><div class="memory-cell" title="[9:3]">0</div><div class="memory-cell" title="[9:4]">0</div><div class="memory-cell" title="[9:5]">0</div><div class="memory-cell" title="[9:6]">0</div><div class="memory-cell" title="[9:7]">0</div><div class="memory-cell" title="[9:8]">0</div><div class="memory-cell" title="[9:9]">0</div><div class="memory-cell" title="[9:A]">0</div><div class="memory-cell" title="[9:B]">0</div><div class="memory-cell" title="[9:C]">0</div><div class="memory-cell" title="[9:D]">0</div><div class="memory-cell" title="[9:E]">0</div><div class="memory-cell" title="[9:F]">0</div><div class="memory-label">A</div><div class="memory-cell" title="[A:0]">0</div><div class="memory-cell" title="[A:1]">0</div><div class="memory-cell" title="[A:2]">0</div><div class="memory-cell" title="[A:3]">0</div><div class="memory-cell" title="[A:4]">0</div><div class="memory-cell" title="[A:5]">0</div><div class="memory-cell" title="[A:6]">0</div><div class="memory-cell" title="[A:7]">0</div><div class="memory-cell" title="[A:8]">0</div><div class="memory-cell" title="[A:9]">0</div><div class="memory-cell" title="[A:A]">0</div><div class="memory-cell" title="[A:B]">0</div><div class="memory-cell" title="[A:C]">0</div><div class="memory-cell" title="[A:D]">0</div><div class="memory-cell" title="[A:E]">0</div><div class="memory-cell" title="[A:F]">0</div><div class="memory-label">B</div><div class="memory-cell" title="[B:0]">0</div><div class="memory-cell" title="[B:1]">0</div><div class="memory-cell" title="[B:2]">0</div><div class="memory-cell" title="[B:3]">0</div><div class="memory-cell" title="[B:4]">0</div><div class="memory-cell" title="[B:5]">0</div><div class="memory-cell" title="[B:6]">0</div><div class="memory-cell" title="[B:7]">0</div><div class="memory-cell" title="[B:8]">0</div><div class="memory-cell" title="[B:9]">0</div><div class="memory-cell" title="[B:A]">0</div><div class="memory-cell" title="[B:B]">0</div><div class="memory-cell" title="[B:C]">0</div><div class="memory-cell" title="[B:D]">0</div><div class="memory-cell" title="[B:E]">0</div><div class="memory-cell" title="[B:F]">0</div><div class="memory-label">C</div><div class="memory-cell" title="[C:0]">0</div><div class="memory-cell" title="[C:1]">0</div><div class="memory-cell" title="[C:2]">0</div><div class="memory-cell" title="[C:3]">0</div><div class="memory-cell" title="[C:4]">0</div><div class="memory-cell" title="[C:5]">0</div><div class="memory-cell" title="[C:6]">0</div><div class="memory-cell" title="[C:7]">0</div><div class="memory-cell" title="[C:8]">0</div><div class="memory-cell" title="[C:9]">0</div><div class="memory-cell" title="[C:A]">0</div><div class="memory-cell" title="[C:B]">0</div><div class="memory-cell" title="[C:C]">0</div><div class="memory-cell" title="[C:D]">0</div><div class="memory-cell" title="[C:E]">0</div><div class="memory-cell" title="[C:F]">0</div><div class="memory-label">D</div><div class="memory-cell" title="[D:0]">0</div><div class="memory-cell" title="[D:1]">0</div><div class="memory-cell" title="[D:2]">0</div><div class="memory-cell" title="[D:3]">0</div><div class="memory-cell" title="[D:4]">0</div><div class="memory-cell" title="[D:5]">0</div><div class="memory-cell" title="[D:6]">0</div><div class="memory-cell" title="[D:7]">0</div><div class="memory-cell" title="[D:8]">0</div><div class="memory-cell" title="[D:9]">0</div><div class="memory-cell" title="[D:A]">0</div><div class="memory-cell" title="[D:B]">0</div><div class="memory-cell" title="[D:C]">0</div><div class="memory-cell" title="[D:D]">0</div><div class="memory-cell" title="[D:E]">0</div><div class="memory-cell" title="[D:F]">0</div><div class="memory-label">E</div><div class="memory-cell" title="[E:0]">0</div><div class="memory-cell" title="[E:1]">0</div><div class="memory-cell" title="[E:2]">0</div><div class="memory-cell" title="[E:3]">0</div><div class="memory-cell" title="[E:4]">0</div><div class="memory-cell" title="[E:5]">0</div><div class="memory-cell" title="[E:6]">0</div><div class="memory-cell" title="[E:7]">0</div><div class="memory-cell" title="[E:8]">0</div><div class="memory-cell" title="[E:9]">0</div><div class="memory-cell" title="[E:A]">0</div><div class="memory-cell" title="[E:B]">0</div><div class="memory-cell" title="[E:C]">0</div><div class="memory-cell" title="[E:D]">0</div><div class="memory-cell" title="[E:E]">0</div><div class="memory-cell" title="[E:F]">0</div><div class="memory-label">F</div><div class="memory-cell video" title="[F:0]">0</div><div class="memory-cell video" title="[F:1]">0</div><div class="memory-cell video" title="[F:2]">0</div><div class="memory-cell video" title="[F:3]">0</div><div class="memory-cell video" title="[F:4]">1</div><div class="memory-cell video" title="[F:5]">0</div><div class="memory-cell video" title="[F:6]">0</div><div class="memory-cell video" title="[F:7]">0</div><div class="memory-cell video" title="[F:8]">1</div><div class="memory-cell video" title="[F:9]">0</div><div class="memory-cell video" title="[F:A]">0</div><div class="memory-cell video" title="[F:B]">0</div><div class="memory-cell video" title="[F:C]">1</div><div class="memory-cell video" title="[F:D]">0</div><div class="memory-cell video" title="[F:E]">0</div><div class="memory-cell video" title="[F:F]">0</div></div>
+        <div class="memory-grid"><div class="memory-head">Bank</div><div class="memory-head">0</div><div class="memory-head">1</div><div class="memory-head">2</div><div class="memory-head">3</div><div class="memory-head">4</div><div class="memory-head">5</div><div class="memory-head">6</div><div class="memory-head">7</div><div class="memory-head">8</div><div class="memory-head">9</div><div class="memory-head">A</div><div class="memory-head">B</div><div class="memory-head">C</div><div class="memory-head">D</div><div class="memory-head">E</div><div class="memory-head">F</div><div class="memory-label">0</div><div class="memory-cell instruction instruction-start pc" data-bank="0" data-address="0" title="[0:0]">7</div><div class="memory-cell instruction pc" data-bank="0" data-address="1" title="[0:1]">0</div><div class="memory-cell instruction pc" data-bank="0" data-address="2" title="[0:2]">3</div><div class="memory-cell instruction pc" data-bank="0" data-address="3" title="[0:3]">0</div><div class="memory-cell instruction instruction-start" data-bank="0" data-address="4" title="[0:4]">8</div><div class="memory-cell instruction" data-bank="0" data-address="5" title="[0:5]">0</div><div class="memory-cell instruction" data-bank="0" data-address="6" title="[0:6]">0</div><div class="memory-cell instruction" data-bank="0" data-address="7" title="[0:7]">C</div><div class="memory-cell instruction instruction-start" data-bank="0" data-address="8" title="[0:8]">B</div><div class="memory-cell instruction" data-bank="0" data-address="9" title="[0:9]">1</div><div class="memory-cell instruction" data-bank="0" data-address="10" title="[0:A]">0</div><div class="memory-cell instruction" data-bank="0" data-address="11" title="[0:B]">0</div><div class="memory-cell instruction instruction-start" data-bank="0" data-address="12" title="[0:C]">B</div><div class="memory-cell instruction" data-bank="0" data-address="13" title="[0:D]">3</div><div class="memory-cell instruction" data-bank="0" data-address="14" title="[0:E]">8</div><div class="memory-cell instruction" data-bank="0" data-address="15" title="[0:F]">0</div><div class="memory-label">1</div><div class="memory-cell instruction instruction-start" data-bank="1" data-address="0" title="[1:0]">7</div><div class="memory-cell instruction" data-bank="1" data-address="1" title="[1:1]">1</div><div class="memory-cell instruction" data-bank="1" data-address="2" title="[1:2]">1</div><div class="memory-cell instruction" data-bank="1" data-address="3" title="[1:3]">0</div><div class="memory-cell instruction instruction-start" data-bank="1" data-address="4" title="[1:4]">2</div><div class="memory-cell instruction" data-bank="1" data-address="5" title="[1:5]">2</div><div class="memory-cell instruction" data-bank="1" data-address="6" title="[1:6]">0</div><div class="memory-cell instruction" data-bank="1" data-address="7" title="[1:7]">0</div><div class="memory-cell instruction instruction-start" data-bank="1" data-address="8" title="[1:8]">2</div><div class="memory-cell instruction" data-bank="1" data-address="9" title="[1:9]">3</div><div class="memory-cell instruction" data-bank="1" data-address="10" title="[1:A]">2</div><div class="memory-cell instruction" data-bank="1" data-address="11" title="[1:B]">0</div><div class="memory-cell instruction instruction-start" data-bank="1" data-address="12" title="[1:C]">3</div><div class="memory-cell instruction" data-bank="1" data-address="13" title="[1:D]">3</div><div class="memory-cell instruction" data-bank="1" data-address="14" title="[1:E]">2</div><div class="memory-cell instruction" data-bank="1" data-address="15" title="[1:F]">0</div><div class="memory-label">2</div><div class="memory-cell instruction instruction-start" data-bank="2" data-address="0" title="[2:0]">3</div><div class="memory-cell instruction" data-bank="2" data-address="1" title="[2:1]">3</div><div class="memory-cell instruction" data-bank="2" data-address="2" title="[2:2]">2</div><div class="memory-cell instruction" data-bank="2" data-address="3" title="[2:3]">0</div><div class="memory-cell instruction instruction-start" data-bank="2" data-address="4" title="[2:4]">3</div><div class="memory-cell instruction" data-bank="2" data-address="5" title="[2:5]">3</div><div class="memory-cell instruction" data-bank="2" data-address="6" title="[2:6]">2</div><div class="memory-cell instruction" data-bank="2" data-address="7" title="[2:7]">0</div><div class="memory-cell instruction instruction-start" data-bank="2" data-address="8" title="[2:8]">4</div><div class="memory-cell instruction" data-bank="2" data-address="9" title="[2:9]">3</div><div class="memory-cell instruction" data-bank="2" data-address="10" title="[2:A]">0</div><div class="memory-cell instruction" data-bank="2" data-address="11" title="[2:B]">0</div><div class="memory-cell instruction instruction-start" data-bank="2" data-address="12" title="[2:C]">E</div><div class="memory-cell instruction" data-bank="2" data-address="13" title="[2:D]">1</div><div class="memory-cell instruction" data-bank="2" data-address="14" title="[2:E]">3</div><div class="memory-cell instruction" data-bank="2" data-address="15" title="[2:F]">0</div><div class="memory-label">3</div><div class="memory-cell instruction instruction-start" data-bank="3" data-address="0" title="[3:0]">6</div><div class="memory-cell instruction" data-bank="3" data-address="1" title="[3:1]">0</div><div class="memory-cell instruction" data-bank="3" data-address="2" title="[3:2]">1</div><div class="memory-cell instruction" data-bank="3" data-address="3" title="[3:3]">0</div><div class="memory-cell instruction instruction-start" data-bank="3" data-address="4" title="[3:4]">B</div><div class="memory-cell instruction" data-bank="3" data-address="5" title="[3:5]">0</div><div class="memory-cell instruction" data-bank="3" data-address="6" title="[3:6]">4</div><div class="memory-cell instruction" data-bank="3" data-address="7" title="[3:7]">0</div><div class="memory-cell instruction instruction-start" data-bank="3" data-address="8" title="[3:8]">C</div><div class="memory-cell instruction" data-bank="3" data-address="9" title="[3:9]">0</div><div class="memory-cell instruction" data-bank="3" data-address="10" title="[3:A]">0</div><div class="memory-cell instruction" data-bank="3" data-address="11" title="[3:B]">0</div><div class="memory-cell" data-bank="3" data-address="12" title="[3:C]">0</div><div class="memory-cell" data-bank="3" data-address="13" title="[3:D]">0</div><div class="memory-cell" data-bank="3" data-address="14" title="[3:E]">0</div><div class="memory-cell" data-bank="3" data-address="15" title="[3:F]">0</div><div class="memory-label">4</div><div class="memory-cell" data-bank="4" data-address="0" title="[4:0]">0</div><div class="memory-cell" data-bank="4" data-address="1" title="[4:1]">0</div><div class="memory-cell" data-bank="4" data-address="2" title="[4:2]">0</div><div class="memory-cell" data-bank="4" data-address="3" title="[4:3]">0</div><div class="memory-cell" data-bank="4" data-address="4" title="[4:4]">0</div><div class="memory-cell" data-bank="4" data-address="5" title="[4:5]">0</div><div class="memory-cell" data-bank="4" data-address="6" title="[4:6]">0</div><div class="memory-cell" data-bank="4" data-address="7" title="[4:7]">0</div><div class="memory-cell" data-bank="4" data-address="8" title="[4:8]">0</div><div class="memory-cell" data-bank="4" data-address="9" title="[4:9]">0</div><div class="memory-cell" data-bank="4" data-address="10" title="[4:A]">0</div><div class="memory-cell" data-bank="4" data-address="11" title="[4:B]">0</div><div class="memory-cell" data-bank="4" data-address="12" title="[4:C]">0</div><div class="memory-cell" data-bank="4" data-address="13" title="[4:D]">0</div><div class="memory-cell" data-bank="4" data-address="14" title="[4:E]">0</div><div class="memory-cell" data-bank="4" data-address="15" title="[4:F]">0</div><div class="memory-label">5</div><div class="memory-cell" data-bank="5" data-address="0" title="[5:0]">0</div><div class="memory-cell" data-bank="5" data-address="1" title="[5:1]">0</div><div class="memory-cell" data-bank="5" data-address="2" title="[5:2]">0</div><div class="memory-cell" data-bank="5" data-address="3" title="[5:3]">0</div><div class="memory-cell" data-bank="5" data-address="4" title="[5:4]">0</div><div class="memory-cell" data-bank="5" data-address="5" title="[5:5]">0</div><div class="memory-cell" data-bank="5" data-address="6" title="[5:6]">0</div><div class="memory-cell" data-bank="5" data-address="7" title="[5:7]">0</div><div class="memory-cell" data-bank="5" data-address="8" title="[5:8]">0</div><div class="memory-cell" data-bank="5" data-address="9" title="[5:9]">0</div><div class="memory-cell" data-bank="5" data-address="10" title="[5:A]">0</div><div class="memory-cell" data-bank="5" data-address="11" title="[5:B]">0</div><div class="memory-cell" data-bank="5" data-address="12" title="[5:C]">0</div><div class="memory-cell" data-bank="5" data-address="13" title="[5:D]">0</div><div class="memory-cell" data-bank="5" data-address="14" title="[5:E]">0</div><div class="memory-cell" data-bank="5" data-address="15" title="[5:F]">0</div><div class="memory-label">6</div><div class="memory-cell" data-bank="6" data-address="0" title="[6:0]">0</div><div class="memory-cell" data-bank="6" data-address="1" title="[6:1]">0</div><div class="memory-cell" data-bank="6" data-address="2" title="[6:2]">0</div><div class="memory-cell" data-bank="6" data-address="3" title="[6:3]">0</div><div class="memory-cell" data-bank="6" data-address="4" title="[6:4]">0</div><div class="memory-cell" data-bank="6" data-address="5" title="[6:5]">0</div><div class="memory-cell" data-bank="6" data-address="6" title="[6:6]">0</div><div class="memory-cell" data-bank="6" data-address="7" title="[6:7]">0</div><div class="memory-cell" data-bank="6" data-address="8" title="[6:8]">0</div><div class="memory-cell" data-bank="6" data-address="9" title="[6:9]">0</div><div class="memory-cell" data-bank="6" data-address="10" title="[6:A]">0</div><div class="memory-cell" data-bank="6" data-address="11" title="[6:B]">0</div><div class="memory-cell" data-bank="6" data-address="12" title="[6:C]">0</div><div class="memory-cell" data-bank="6" data-address="13" title="[6:D]">0</div><div class="memory-cell" data-bank="6" data-address="14" title="[6:E]">0</div><div class="memory-cell" data-bank="6" data-address="15" title="[6:F]">0</div><div class="memory-label">7</div><div class="memory-cell" data-bank="7" data-address="0" title="[7:0]">0</div><div class="memory-cell" data-bank="7" data-address="1" title="[7:1]">0</div><div class="memory-cell" data-bank="7" data-address="2" title="[7:2]">0</div><div class="memory-cell" data-bank="7" data-address="3" title="[7:3]">0</div><div class="memory-cell" data-bank="7" data-address="4" title="[7:4]">0</div><div class="memory-cell" data-bank="7" data-address="5" title="[7:5]">0</div><div class="memory-cell" data-bank="7" data-address="6" title="[7:6]">0</div><div class="memory-cell" data-bank="7" data-address="7" title="[7:7]">0</div><div class="memory-cell" data-bank="7" data-address="8" title="[7:8]">0</div><div class="memory-cell" data-bank="7" data-address="9" title="[7:9]">0</div><div class="memory-cell" data-bank="7" data-address="10" title="[7:A]">0</div><div class="memory-cell" data-bank="7" data-address="11" title="[7:B]">0</div><div class="memory-cell" data-bank="7" data-address="12" title="[7:C]">0</div><div class="memory-cell" data-bank="7" data-address="13" title="[7:D]">0</div><div class="memory-cell" data-bank="7" data-address="14" title="[7:E]">0</div><div class="memory-cell" data-bank="7" data-address="15" title="[7:F]">0</div><div class="memory-label">8</div><div class="memory-cell" data-bank="8" data-address="0" title="[8:0]">0</div><div class="memory-cell" data-bank="8" data-address="1" title="[8:1]">0</div><div class="memory-cell" data-bank="8" data-address="2" title="[8:2]">0</div><div class="memory-cell" data-bank="8" data-address="3" title="[8:3]">0</div><div class="memory-cell" data-bank="8" data-address="4" title="[8:4]">0</div><div class="memory-cell" data-bank="8" data-address="5" title="[8:5]">0</div><div class="memory-cell" data-bank="8" data-address="6" title="[8:6]">0</div><div class="memory-cell" data-bank="8" data-address="7" title="[8:7]">0</div><div class="memory-cell" data-bank="8" data-address="8" title="[8:8]">0</div><div class="memory-cell" data-bank="8" data-address="9" title="[8:9]">0</div><div class="memory-cell" data-bank="8" data-address="10" title="[8:A]">0</div><div class="memory-cell" data-bank="8" data-address="11" title="[8:B]">0</div><div class="memory-cell" data-bank="8" data-address="12" title="[8:C]">0</div><div class="memory-cell" data-bank="8" data-address="13" title="[8:D]">0</div><div class="memory-cell" data-bank="8" data-address="14" title="[8:E]">0</div><div class="memory-cell" data-bank="8" data-address="15" title="[8:F]">0</div><div class="memory-label">9</div><div class="memory-cell" data-bank="9" data-address="0" title="[9:0]">0</div><div class="memory-cell" data-bank="9" data-address="1" title="[9:1]">0</div><div class="memory-cell" data-bank="9" data-address="2" title="[9:2]">0</div><div class="memory-cell" data-bank="9" data-address="3" title="[9:3]">0</div><div class="memory-cell" data-bank="9" data-address="4" title="[9:4]">0</div><div class="memory-cell" data-bank="9" data-address="5" title="[9:5]">0</div><div class="memory-cell" data-bank="9" data-address="6" title="[9:6]">0</div><div class="memory-cell" data-bank="9" data-address="7" title="[9:7]">0</div><div class="memory-cell" data-bank="9" data-address="8" title="[9:8]">0</div><div class="memory-cell" data-bank="9" data-address="9" title="[9:9]">0</div><div class="memory-cell" data-bank="9" data-address="10" title="[9:A]">0</div><div class="memory-cell" data-bank="9" data-address="11" title="[9:B]">0</div><div class="memory-cell" data-bank="9" data-address="12" title="[9:C]">0</div><div class="memory-cell" data-bank="9" data-address="13" title="[9:D]">0</div><div class="memory-cell" data-bank="9" data-address="14" title="[9:E]">0</div><div class="memory-cell" data-bank="9" data-address="15" title="[9:F]">0</div><div class="memory-label">A</div><div class="memory-cell" data-bank="10" data-address="0" title="[A:0]">0</div><div class="memory-cell" data-bank="10" data-address="1" title="[A:1]">0</div><div class="memory-cell" data-bank="10" data-address="2" title="[A:2]">0</div><div class="memory-cell" data-bank="10" data-address="3" title="[A:3]">0</div><div class="memory-cell" data-bank="10" data-address="4" title="[A:4]">0</div><div class="memory-cell" data-bank="10" data-address="5" title="[A:5]">0</div><div class="memory-cell" data-bank="10" data-address="6" title="[A:6]">0</div><div class="memory-cell" data-bank="10" data-address="7" title="[A:7]">0</div><div class="memory-cell" data-bank="10" data-address="8" title="[A:8]">0</div><div class="memory-cell" data-bank="10" data-address="9" title="[A:9]">0</div><div class="memory-cell" data-bank="10" data-address="10" title="[A:A]">0</div><div class="memory-cell" data-bank="10" data-address="11" title="[A:B]">0</div><div class="memory-cell" data-bank="10" data-address="12" title="[A:C]">0</div><div class="memory-cell" data-bank="10" data-address="13" title="[A:D]">0</div><div class="memory-cell" data-bank="10" data-address="14" title="[A:E]">0</div><div class="memory-cell" data-bank="10" data-address="15" title="[A:F]">0</div><div class="memory-label">B</div><div class="memory-cell" data-bank="11" data-address="0" title="[B:0]">0</div><div class="memory-cell" data-bank="11" data-address="1" title="[B:1]">0</div><div class="memory-cell" data-bank="11" data-address="2" title="[B:2]">0</div><div class="memory-cell" data-bank="11" data-address="3" title="[B:3]">0</div><div class="memory-cell" data-bank="11" data-address="4" title="[B:4]">0</div><div class="memory-cell" data-bank="11" data-address="5" title="[B:5]">0</div><div class="memory-cell" data-bank="11" data-address="6" title="[B:6]">0</div><div class="memory-cell" data-bank="11" data-address="7" title="[B:7]">0</div><div class="memory-cell" data-bank="11" data-address="8" title="[B:8]">0</div><div class="memory-cell" data-bank="11" data-address="9" title="[B:9]">0</div><div class="memory-cell" data-bank="11" data-address="10" title="[B:A]">0</div><div class="memory-cell" data-bank="11" data-address="11" title="[B:B]">0</div><div class="memory-cell" data-bank="11" data-address="12" title="[B:C]">0</div><div class="memory-cell" data-bank="11" data-address="13" title="[B:D]">0</div><div class="memory-cell" data-bank="11" data-address="14" title="[B:E]">0</div><div class="memory-cell" data-bank="11" data-address="15" title="[B:F]">0</div><div class="memory-label">C</div><div class="memory-cell" data-bank="12" data-address="0" title="[C:0]">0</div><div class="memory-cell" data-bank="12" data-address="1" title="[C:1]">0</div><div class="memory-cell" data-bank="12" data-address="2" title="[C:2]">0</div><div class="memory-cell" data-bank="12" data-address="3" title="[C:3]">0</div><div class="memory-cell" data-bank="12" data-address="4" title="[C:4]">0</div><div class="memory-cell" data-bank="12" data-address="5" title="[C:5]">0</div><div class="memory-cell" data-bank="12" data-address="6" title="[C:6]">0</div><div class="memory-cell" data-bank="12" data-address="7" title="[C:7]">0</div><div class="memory-cell" data-bank="12" data-address="8" title="[C:8]">0</div><div class="memory-cell" data-bank="12" data-address="9" title="[C:9]">0</div><div class="memory-cell" data-bank="12" data-address="10" title="[C:A]">0</div><div class="memory-cell" data-bank="12" data-address="11" title="[C:B]">0</div><div class="memory-cell" data-bank="12" data-address="12" title="[C:C]">0</div><div class="memory-cell" data-bank="12" data-address="13" title="[C:D]">0</div><div class="memory-cell" data-bank="12" data-address="14" title="[C:E]">0</div><div class="memory-cell" data-bank="12" data-address="15" title="[C:F]">0</div><div class="memory-label">D</div><div class="memory-cell" data-bank="13" data-address="0" title="[D:0]">0</div><div class="memory-cell" data-bank="13" data-address="1" title="[D:1]">0</div><div class="memory-cell" data-bank="13" data-address="2" title="[D:2]">0</div><div class="memory-cell" data-bank="13" data-address="3" title="[D:3]">0</div><div class="memory-cell" data-bank="13" data-address="4" title="[D:4]">0</div><div class="memory-cell" data-bank="13" data-address="5" title="[D:5]">0</div><div class="memory-cell" data-bank="13" data-address="6" title="[D:6]">0</div><div class="memory-cell" data-bank="13" data-address="7" title="[D:7]">0</div><div class="memory-cell" data-bank="13" data-address="8" title="[D:8]">0</div><div class="memory-cell" data-bank="13" data-address="9" title="[D:9]">0</div><div class="memory-cell" data-bank="13" data-address="10" title="[D:A]">0</div><div class="memory-cell" data-bank="13" data-address="11" title="[D:B]">0</div><div class="memory-cell" data-bank="13" data-address="12" title="[D:C]">0</div><div class="memory-cell" data-bank="13" data-address="13" title="[D:D]">0</div><div class="memory-cell" data-bank="13" data-address="14" title="[D:E]">0</div><div class="memory-cell" data-bank="13" data-address="15" title="[D:F]">0</div><div class="memory-label">E</div><div class="memory-cell" data-bank="14" data-address="0" title="[E:0]">0</div><div class="memory-cell" data-bank="14" data-address="1" title="[E:1]">0</div><div class="memory-cell" data-bank="14" data-address="2" title="[E:2]">0</div><div class="memory-cell" data-bank="14" data-address="3" title="[E:3]">0</div><div class="memory-cell" data-bank="14" data-address="4" title="[E:4]">0</div><div class="memory-cell" data-bank="14" data-address="5" title="[E:5]">0</div><div class="memory-cell" data-bank="14" data-address="6" title="[E:6]">0</div><div class="memory-cell" data-bank="14" data-address="7" title="[E:7]">0</div><div class="memory-cell" data-bank="14" data-address="8" title="[E:8]">0</div><div class="memory-cell" data-bank="14" data-address="9" title="[E:9]">0</div><div class="memory-cell" data-bank="14" data-address="10" title="[E:A]">0</div><div class="memory-cell" data-bank="14" data-address="11" title="[E:B]">0</div><div class="memory-cell" data-bank="14" data-address="12" title="[E:C]">0</div><div class="memory-cell" data-bank="14" data-address="13" title="[E:D]">0</div><div class="memory-cell" data-bank="14" data-address="14" title="[E:E]">0</div><div class="memory-cell" data-bank="14" data-address="15" title="[E:F]">0</div><div class="memory-label">F</div><div class="memory-cell video" data-bank="15" data-address="0" title="[F:0]">0</div><div class="memory-cell video" data-bank="15" data-address="1" title="[F:1]">0</div><div class="memory-cell video" data-bank="15" data-address="2" title="[F:2]">0</div><div class="memory-cell video" data-bank="15" data-address="3" title="[F:3]">0</div><div class="memory-cell video" data-bank="15" data-address="4" title="[F:4]">0</div><div class="memory-cell video" data-bank="15" data-address="5" title="[F:5]">0</div><div class="memory-cell video" data-bank="15" data-address="6" title="[F:6]">0</div><div class="memory-cell video" data-bank="15" data-address="7" title="[F:7]">0</div><div class="memory-cell video" data-bank="15" data-address="8" title="[F:8]">0</div><div class="memory-cell video" data-bank="15" data-address="9" title="[F:9]">0</div><div class="memory-cell video" data-bank="15" data-address="10" title="[F:A]">0</div><div class="memory-cell video" data-bank="15" data-address="11" title="[F:B]">0</div><div class="memory-cell video" data-bank="15" data-address="12" title="[F:C]">0</div><div class="memory-cell video" data-bank="15" data-address="13" title="[F:D]">0</div><div class="memory-cell video" data-bank="15" data-address="14" title="[F:E]">0</div><div class="memory-cell video" data-bank="15" data-address="15" title="[F:F]">0</div></div>
       </div>
     </section>
   
@@ -723,7 +788,7 @@ while (x != 0) {
       </div>
       <div class="panel-body">
         <div class="display-wrap">
-          <div class="display-grid"><div class="pixel" title="pixel(0, 0) / [F:0]"></div><div class="pixel" title="pixel(1, 0) / [F:1]"></div><div class="pixel" title="pixel(2, 0) / [F:2]"></div><div class="pixel" title="pixel(3, 0) / [F:3]"></div><div class="pixel on" title="pixel(0, 1) / [F:4]"></div><div class="pixel" title="pixel(1, 1) / [F:5]"></div><div class="pixel" title="pixel(2, 1) / [F:6]"></div><div class="pixel" title="pixel(3, 1) / [F:7]"></div><div class="pixel on" title="pixel(0, 2) / [F:8]"></div><div class="pixel" title="pixel(1, 2) / [F:9]"></div><div class="pixel" title="pixel(2, 2) / [F:A]"></div><div class="pixel" title="pixel(3, 2) / [F:B]"></div><div class="pixel on" title="pixel(0, 3) / [F:C]"></div><div class="pixel" title="pixel(1, 3) / [F:D]"></div><div class="pixel" title="pixel(2, 3) / [F:E]"></div><div class="pixel" title="pixel(3, 3) / [F:F]"></div></div>
+          <div class="display-grid"><div class="pixel" data-address="0" title="pixel(0, 0) / [F:0]"></div><div class="pixel" data-address="1" title="pixel(1, 0) / [F:1]"></div><div class="pixel" data-address="2" title="pixel(2, 0) / [F:2]"></div><div class="pixel" data-address="3" title="pixel(3, 0) / [F:3]"></div><div class="pixel" data-address="4" title="pixel(0, 1) / [F:4]"></div><div class="pixel" data-address="5" title="pixel(1, 1) / [F:5]"></div><div class="pixel" data-address="6" title="pixel(2, 1) / [F:6]"></div><div class="pixel" data-address="7" title="pixel(3, 1) / [F:7]"></div><div class="pixel" data-address="8" title="pixel(0, 2) / [F:8]"></div><div class="pixel" data-address="9" title="pixel(1, 2) / [F:9]"></div><div class="pixel" data-address="10" title="pixel(2, 2) / [F:A]"></div><div class="pixel" data-address="11" title="pixel(3, 2) / [F:B]"></div><div class="pixel" data-address="12" title="pixel(0, 3) / [F:C]"></div><div class="pixel" data-address="13" title="pixel(1, 3) / [F:D]"></div><div class="pixel" data-address="14" title="pixel(2, 3) / [F:E]"></div><div class="pixel" data-address="15" title="pixel(3, 3) / [F:F]"></div></div>
           <div class="display-meta">
             <div class="stat-row">
               <span class="stat-name">VRAM</span>
@@ -732,7 +797,7 @@ while (x != 0) {
             </div>
             <div class="stat-row">
               <span class="stat-name">On</span>
-              <span class="stat-value">3</span>
+              <span class="stat-value" id="display-on-count">0</span>
               <span>pixels</span>
             </div>
           </div>
@@ -743,5 +808,168 @@ while (x != 0) {
     </main>
   
     </div>
+    
+    <script>
+      const snapshots = [{"pc":{"bank":0,"address":0},"registers":[0,0,0,0],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]},{"pc":{"bank":0,"address":4},"registers":[3,0,0,0],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]},{"pc":{"bank":0,"address":8},"registers":[3,0,0,0],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]},{"pc":{"bank":1,"address":0},"registers":[3,0,0,0],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]},{"pc":{"bank":1,"address":4},"registers":[3,1,0,0],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]},{"pc":{"bank":1,"address":8},"registers":[3,1,3,0],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]},{"pc":{"bank":1,"address":12},"registers":[3,1,3,3],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]},{"pc":{"bank":2,"address":0},"registers":[3,1,3,6],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]},{"pc":{"bank":2,"address":4},"registers":[3,1,3,9],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]},{"pc":{"bank":2,"address":8},"registers":[3,1,3,12],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]},{"pc":{"bank":2,"address":12},"registers":[3,1,3,12],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]]},{"pc":{"bank":3,"address":0},"registers":[3,1,3,12],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]]},{"pc":{"bank":3,"address":4},"registers":[2,1,3,12],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]]},{"pc":{"bank":0,"address":4},"registers":[2,1,3,12],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]]},{"pc":{"bank":0,"address":8},"registers":[2,1,3,12],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]]},{"pc":{"bank":1,"address":0},"registers":[2,1,3,12],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]]},{"pc":{"bank":1,"address":4},"registers":[2,1,3,12],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]]},{"pc":{"bank":1,"address":8},"registers":[2,1,2,12],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]]},{"pc":{"bank":1,"address":12},"registers":[2,1,2,2],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]]},{"pc":{"bank":2,"address":0},"registers":[2,1,2,4],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]]},{"pc":{"bank":2,"address":4},"registers":[2,1,2,6],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]]},{"pc":{"bank":2,"address":8},"registers":[2,1,2,8],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]]},{"pc":{"bank":2,"address":12},"registers":[2,1,2,8],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]]},{"pc":{"bank":3,"address":0},"registers":[2,1,2,8],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":3,"address":4},"registers":[1,1,2,8],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":0,"address":4},"registers":[1,1,2,8],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":0,"address":8},"registers":[1,1,2,8],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":1,"address":0},"registers":[1,1,2,8],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":1,"address":4},"registers":[1,1,2,8],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":1,"address":8},"registers":[1,1,1,8],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":1,"address":12},"registers":[1,1,1,1],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":2,"address":0},"registers":[1,1,1,2],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":2,"address":4},"registers":[1,1,1,3],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":2,"address":8},"registers":[1,1,1,4],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":2,"address":12},"registers":[1,1,1,4],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":3,"address":0},"registers":[1,1,1,4],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":3,"address":4},"registers":[0,1,1,4],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":0,"address":4},"registers":[0,1,1,4],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":0,"address":12},"registers":[0,1,1,4],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":3,"address":8},"registers":[0,1,1,4],"halted":false,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0]]},{"pc":{"bank":3,"address":8},"registers":[0,1,1,4],"halted":true,"memory":[[7,0,3,0,8,0,0,12,11,1,0,0,11,3,8,0],[7,1,1,0,2,2,0,0,2,3,2,0,3,3,2,0],[3,3,2,0,3,3,2,0,4,3,0,0,14,1,3,0],[6,0,1,0,11,0,4,0,12,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0]]}];
+      let snapshotIndex = 0;
+      let runTimer = null;
+
+      const hexNibble = (value) => value.toString(16).toUpperCase();
+      const hexByte = (value) => value.toString(16).toUpperCase().padStart(2, "0");
+      const binaryNibble = (value) => value.toString(2).padStart(4, "0");
+
+      function decodeMachineWord(word) {
+        const opcode = Number.parseInt(word[0], 16);
+        const a = word[1];
+        const b = word[2];
+        const c = word[3];
+        const registers = ["D1", "D2", "D3", "D4"];
+        const reg = (nibble) => registers[Number.parseInt(nibble, 16)] ?? "D?";
+
+        switch (opcode) {
+          case 0x0: return "LOAD " + reg(a) + ", [" + b + ":" + c + "]";
+          case 0x1: return "STORE " + reg(a) + ", [" + b + ":" + c + "]";
+          case 0x2: return "MOV " + reg(a) + ", " + reg(b);
+          case 0x3: return "ADD " + reg(a) + ", " + reg(b);
+          case 0x4: return "ADDI " + reg(a) + ", " + b;
+          case 0x5: return "SUB " + reg(a) + ", " + reg(b);
+          case 0x6: return "SUBI " + reg(a) + ", " + b;
+          case 0x7: return "SET " + reg(a) + ", " + b;
+          case 0x8: return "BEQ " + reg(a) + ", " + b + ", " + c;
+          case 0x9: return "BGT " + reg(a) + ", " + b + ", " + c;
+          case 0xA: return "BLT " + reg(a) + ", " + b + ", " + c;
+          case 0xB: return "JMP " + a + ":" + b;
+          case 0xC: return "HALT";
+          case 0xD: return "NOP";
+          case 0xE: return "STOREI " + reg(a) + ", [" + reg(b) + "]";
+          default: return "UNKNOWN 0x" + word[0];
+        }
+      }
+
+      function currentWord(snapshot) {
+        const { bank, address } = snapshot.pc;
+        return [0, 1, 2, 3]
+          .map((offset) => snapshot.memory[bank][(address + offset) & 0xf])
+          .map(hexNibble)
+          .join("");
+      }
+
+      function isCurrentInstructionCell(snapshot, bank, address) {
+        if (bank !== snapshot.pc.bank) {
+          return false;
+        }
+
+        return [0, 1, 2, 3].some((offset) => ((snapshot.pc.address + offset) & 0xf) === address);
+      }
+
+      function setText(selector, value) {
+        const node = document.querySelector(selector);
+        if (node) {
+          node.textContent = value;
+        }
+      }
+
+      function updateSnapshot(index) {
+        snapshotIndex = Math.max(0, Math.min(index, snapshots.length - 1));
+        const snapshot = snapshots[snapshotIndex];
+        const pcKey = snapshot.pc.bank + ":" + snapshot.pc.address;
+        const executedSnapshot = snapshotIndex > 0 ? snapshots[snapshotIndex - 1] : null;
+        const executedPcKey = executedSnapshot
+          ? executedSnapshot.pc.bank + ":" + executedSnapshot.pc.address
+          : "";
+        const absolutePc = (snapshot.pc.bank << 4) | snapshot.pc.address;
+
+        snapshot.registers.forEach((value, register) => {
+          const previousValue = snapshotIndex > 0 ? snapshots[snapshotIndex - 1].registers[register] : value;
+          setText("[data-register-value='" + register + "']", hexNibble(value));
+          setText("[data-register-binary='" + register + "']", binaryNibble(value));
+          const row = document.querySelector("[data-register-row='" + register + "']");
+          if (row) {
+            row.classList.toggle("changed", value !== previousValue);
+          }
+        });
+
+        setText("#pc-bank", hexNibble(snapshot.pc.bank));
+        setText("#pc-address", hexNibble(snapshot.pc.address));
+        setText("#pc-absolute", hexByte(absolutePc));
+        setText("#pc-label", hexNibble(snapshot.pc.bank) + ":" + hexNibble(snapshot.pc.address));
+
+        const word = currentWord(snapshot);
+        setText("#current-word", word);
+        setText("#current-decode", decodeMachineWord(word));
+        setText("#cpu-status", snapshot.halted ? "halted" : "paused");
+        setText("#run-status", snapshot.halted ? "Halted" : "Paused");
+        setText("#step-index", String(snapshotIndex));
+
+        document.querySelectorAll(".listing tbody tr").forEach((row) => {
+          row.classList.toggle("current", row.dataset.pc === pcKey);
+          row.classList.toggle("executed", executedPcKey !== "" && row.dataset.pc === executedPcKey);
+        });
+
+        const currentRow = document.querySelector(".listing tbody tr.current");
+        const sourceLine = currentRow?.dataset.sourceLine ?? "";
+        document.querySelectorAll(".source-line").forEach((row) => {
+          row.classList.toggle("current", sourceLine !== "" && row.dataset.sourceLine === sourceLine);
+        });
+
+        document.querySelectorAll(".memory-cell").forEach((cell) => {
+          const bank = Number(cell.dataset.bank);
+          const address = Number(cell.dataset.address);
+          cell.textContent = hexNibble(snapshot.memory[bank][address]);
+          cell.classList.toggle("pc", isCurrentInstructionCell(snapshot, bank, address));
+        });
+
+        let onCount = 0;
+        document.querySelectorAll(".pixel").forEach((pixel) => {
+          const address = Number(pixel.dataset.address);
+          const value = snapshot.memory[15][address];
+          if (value === 1) {
+            onCount += 1;
+          }
+          pixel.classList.toggle("on", value === 1);
+        });
+        setText("#display-on-count", String(onCount));
+
+        const atEnd = snapshotIndex >= snapshots.length - 1 || snapshot.halted;
+        const stepButton = document.querySelector("#step-button");
+        const runButton = document.querySelector("#run-button");
+        if (stepButton) {
+          stepButton.disabled = atEnd;
+        }
+        if (runButton) {
+          runButton.disabled = atEnd;
+        }
+        if (atEnd && runTimer !== null) {
+          window.clearInterval(runTimer);
+          runTimer = null;
+        }
+      }
+
+      document.querySelector("#step-button")?.addEventListener("click", () => {
+        updateSnapshot(snapshotIndex + 1);
+      });
+
+      document.querySelector("#run-button")?.addEventListener("click", () => {
+        if (runTimer !== null) {
+          window.clearInterval(runTimer);
+          runTimer = null;
+          setText("#run-status", "Paused");
+          return;
+        }
+        setText("#run-status", "Running");
+        runTimer = window.setInterval(() => updateSnapshot(snapshotIndex + 1), 420);
+      });
+
+      document.querySelector("#reset-button")?.addEventListener("click", () => {
+        if (runTimer !== null) {
+          window.clearInterval(runTimer);
+          runTimer = null;
+        }
+        updateSnapshot(0);
+      });
+
+      updateSnapshot(0);
+    </script>
+  
   </body>
 </html>

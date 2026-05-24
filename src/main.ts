@@ -13,13 +13,23 @@ while (x != 0) {
 
 const compiler = new EZCCompiler();
 const assembly = compiler.compileToAssembly(source);
+const assemblySourceMap = compiler.getAssemblySourceMap();
 const assembler = new Assembler();
 const machineCode = assembler.assemble(assembly);
 
 const machine = new EZPU();
 machine.loadMachineCode(machineCode);
+const traceMachine = new EZPU();
+traceMachine.loadMachineCode(machineCode);
+const snapshots = traceMachine.run({
+  breakBeforeFirstInstruction: true,
+  collectSnapshots: true,
+});
+if (!Array.isArray(snapshots)) {
+  throw new Error("Expected step snapshots from EZPU run.");
+}
 
-console.log("Executing EZC sample program...");
+console.log("Preparing EZC sample program for step-by-step debugging...");
 console.log("EZC source:");
 console.log(source.trim());
 console.log("Assembly:");
@@ -31,16 +41,13 @@ console.log(
     .join("\n"),
 );
 
-machine.run();
-
-console.log("Display:");
-console.log(machine.renderScreen());
-
 const uiPath = renderApp({
   source,
   assembly,
+  assemblySourceMap,
   machineCode,
   machine,
+  snapshots,
 });
 
 console.log(`Debugger UI written to: ${uiPath}`);

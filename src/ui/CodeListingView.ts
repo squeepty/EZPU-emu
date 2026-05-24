@@ -12,6 +12,7 @@ function formatAddress(record: MachineCodeRecord | undefined): string {
 
 export function renderCodeListingView(
   assembly: string[],
+  assemblySourceMap: Array<number | null>,
   machineCode: MachineCodeRecord[],
   currentPc: { bank: number; address: number },
 ): string {
@@ -28,9 +29,11 @@ export function renderCodeListingView(
       const isCurrent = record?.bank === currentPc.bank && record.address === currentPc.address;
       const word = record?.word ?? "";
       const decoded = record ? decodeMachineWord(record.word) : "";
+      const pcKey = record ? `${record.bank}:${record.address}` : "";
+      const sourceLine = assemblySourceMap[index] ?? "";
 
       return `
-        <tr${isCurrent ? ' class="current"' : ""}>
+        <tr${isCurrent ? ' class="current"' : ""} data-pc="${pcKey}" data-source-line="${sourceLine}">
           <td class="address">${index.toString().padStart(2, "0")}</td>
           <td class="address">${formatAddress(record)}</td>
           <td>${escapeHtml(line)}</td>
@@ -64,4 +67,3 @@ export function renderCodeListingView(
     </section>
   `;
 }
-
