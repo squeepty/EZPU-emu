@@ -1,5 +1,7 @@
 # EZPU — 4-Bit Fantasy Computer
 
+Live here: [https://squeepty.github.io/EZPU-emu/ezpu-debugger.html](https://squeepty.github.io/EZPU-emu/ezpu-debugger.html)
+
 ## Vision
 
 EZPU is a tiny educational fantasy computer designed to teach:
